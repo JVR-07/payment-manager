@@ -1,5 +1,6 @@
-import React, { useContext, useEffect, useState, useCallback } from 'react';
+import React, { useContext, useState, useCallback } from 'react';
 import { View, Text, Button, ScrollView, RefreshControl } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { UserContext } from '../components/UserContext';
 import { BACKEND_URL } from '@env';
 
@@ -10,8 +11,8 @@ export default function HomeScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchClients = useCallback(async () => {
-    if (!user || !user.id) return
+  async function fetchClients() {
+    if (!user || !user.id) return;
     setLoading(true);
     try {
       const res = await fetch(`${BACKEND_URL}/users/${user.id}/clients`);
@@ -26,11 +27,13 @@ export default function HomeScreen({ navigation }) {
     }
     setLoading(false);
     setRefreshing(false);
-  }, [user]);
+  }
 
-  useEffect(() => {
-    fetchClients();
-  }, [fetchClients]);
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchClients();
+    }, [user?.id])
+  );
 
   const handleAddClient = () => {
     navigation.navigate('AddClient');
