@@ -6,6 +6,13 @@ from datetime import datetime
 class UserCreate(BaseModel):
     email: EmailStr
 
+class UserOut(BaseModel):
+    id: int
+    email: EmailStr
+
+    class Config:
+        orm_mode = True
+
 # Client
 class ClientCreate(BaseModel):
     name: str
