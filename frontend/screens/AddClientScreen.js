@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { View, Text, TextInput, Button, Alert, ScrollView } from 'react-native';
+import { UserContext } from '../components/UserContext';
+import { BACKEND_URL } from '@env';
 
 export default function AddClientScreen({ navigation }) {
 
+    const {user} = useContext(UserContext);
     const [name, setName] = useState('');
     const [alias, setAlias] = useState('');
     const [dueDay, setDueDay] = useState('');
@@ -14,7 +17,7 @@ export default function AddClientScreen({ navigation }) {
         return email === '' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!name || !alias || !dueDay || !dueAmount) {
             console.log('Error', 'Todos los campos obligatorios deben estar completos.');
             return;
@@ -27,10 +30,32 @@ export default function AddClientScreen({ navigation }) {
             console.log('Error', 'El email no es válido.');
             return;
         }
-        // Aquí puedes enviar los datos al backend
-        // ...
-        console.log('Éxito', 'Cliente agregado correctamente.');
-        navigation.goBack();
+
+        try {
+            const response = await fetch(`${BACKEND_URL}/clients/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: name,
+                    alias: alias,
+                    amount_due: parseFloat(dueAmount),
+                    due_day: parseInt(dueDay),
+                    email: email || null,
+                    phone: phone || null,
+                    user_id: user?.id,
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.log('Error', errorData.detail || 'No se pudo agregar el cliente');
+                return;
+            }
+            console.log('Éxito', 'Cliente agregado correctamente.');
+            navigation.goBack();
+        } catch (error) {
+            console.log('Error', 'Error de conexión con el servidor');
+        }
     };
 
     return (
