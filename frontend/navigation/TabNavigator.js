@@ -5,8 +5,7 @@ import UserScreen from '../screens/UserScreen';
 
 const Tab = createBottomTabNavigator();
 
-export default function TabNavigator({route}) {
-    const { user } = route.params;
+export default function TabNavigator() {
     
     return (
         <Tab.Navigator
@@ -19,14 +18,12 @@ export default function TabNavigator({route}) {
         >
         <Tab.Screen 
             name="Home" 
-            component={HomeScreen} 
-            initialParams={{ user }} 
+            component={HomeScreen}
             options={{ tabBarLabel: 'Inicio' }} 
         />
         <Tab.Screen 
             name="User" 
             component={UserScreen} 
-            initialParams={{ user }} 
             options={{ tabBarLabel: 'Usuario' }} 
         />
         </Tab.Navigator>
