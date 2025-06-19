@@ -1,5 +1,5 @@
 // React and React Native imports
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
@@ -8,6 +8,9 @@ import * as Google from 'expo-auth-session/providers/google';
 // .env
 import { GOOGLE_CLIENT_ID } from '@env';
 import { BACKEND_URL } from '@env';
+import {GOOGLE_AUTH_URL} from '@env';
+// components folder
+import { UserContext } from '../components/UserContext';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -16,17 +19,18 @@ export default function LoginScreen({ navigation }) {
     webClientId: GOOGLE_CLIENT_ID
   });
 
+  const {setUser} = useContext(UserContext);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (response?.type === 'success') {
       const { authentication } = response;
-      fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      fetch(GOOGLE_AUTH_URL, {
         headers: { Authorization: `Bearer ${authentication.accessToken}` },
       })
         .then(res => res.json())
         .then(profile => {
-          fetch(`${BACKEND_URL}users/`, {
+          fetch(`${BACKEND_URL}/users/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: profile.email }),
@@ -36,7 +40,8 @@ export default function LoginScreen({ navigation }) {
               return res.json();
             })
             .then(data => {
-              navigation.navigate('Home', { user: data });
+              setUser(data);
+              navigation.navigate('Home');
             })
             .catch(() => setError('Error al autenticar con el backend'));
         })
