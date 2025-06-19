@@ -38,6 +38,10 @@ def get_clients_by_user(user_id: int, db: Session = Depends(get_db)):
 # Create Client
 @app.post("/clients/", response_model=schemas.ClientOut)
 def create_client(client: schemas.ClientCreate, db: Session = Depends(get_db)):
+    if db.query(models.Client).filter(models.Client.name == client.name).first():
+        raise HTTPException(status_code=400, detail="Ya existe un cliente con ese nombre")
+    if db.query(models.Client).filter(models.Client.alias == client.alias).first():
+        raise HTTPException(status_code=400, detail="Ya existe un cliente con ese alias")
     db_client = models.Client(**client.dict())
     db.add(db_client)
     db.commit()
