@@ -6,9 +6,9 @@ import { useEffect, useState } from 'react';
 // Google Sign-In imports
 import * as Google from 'expo-auth-session/providers/google';
 // .env
-import { GOOGLE_CLIENT_ID } from '@env';
+import { GOOGLE_CLIENT_ID_WEB, GOOGLE_CLIENT_ID_ANDROID } from '@env';
 import { BACKEND_URL } from '@env';
-import {GOOGLE_AUTH_URL} from '@env';
+import { GOOGLE_AUTH_URL } from '@env';
 // components folder
 import { UserContext } from '../components/UserContext';
 
@@ -16,10 +16,12 @@ WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen({ navigation }) {
   const [request, response, promptAsync] = Google.useAuthRequest({
-    webClientId: GOOGLE_CLIENT_ID
+    webClientId: GOOGLE_CLIENT_ID_WEB,
+    androidClientId: GOOGLE_CLIENT_ID_ANDROID,
+    useProxy: true,
   });
 
-  const {setUser} = useContext(UserContext);
+  const { setUser } = useContext(UserContext);
   const [error, setError] = useState(null);
 
   useEffect(() => {
