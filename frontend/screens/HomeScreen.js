@@ -1,17 +1,17 @@
-import React, { useContext, useState, useCallback } from 'react';
+import React, { useContext, useState } from 'react';
 import { View, Text, Button, ScrollView, RefreshControl } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { UserContext } from '../components/UserContext';
 import { BACKEND_URL } from '@env';
-
 import ClientCard from '../components/ClientCard';
+import { getCurrentDay, getClientStatusAndColor } from '../services/clientUtils';
 
 export default function HomeScreen({ navigation }) {
-
   const { user } = useContext(UserContext);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [currentDay, setCurrentDay] = useState(null);
 
   async function fetchClients() {
     if (!user || !user.id) return;
@@ -33,13 +33,17 @@ export default function HomeScreen({ navigation }) {
 
   useFocusEffect(
     React.useCallback(() => {
-      fetchClients();
+      (async () => {
+        const day = await getCurrentDay();
+        setCurrentDay(day);
+        fetchClients();
+      })();
     }, [user?.id])
   );
 
   const handleAddClient = () => {
     navigation.navigate('AddClient');
-  }
+  };
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -57,14 +61,22 @@ export default function HomeScreen({ navigation }) {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {loading ? (
+        {loading || currentDay === null ? (
           <Text style={{ fontSize: 18, color: '#888' }}>Cargando...</Text>
         ) : clients.length === 0 ? (
           <Text style={{ fontSize: 18, color: '#888' }}>No existen clientes aún</Text>
         ) : (
-          clients.map(client => (
-            <ClientCard key={client.id} client={client} />
-          ))
+          clients.map(client => {
+            const { status, color } = getClientStatusAndColor(client.due_day, currentDay);
+            return (
+              <ClientCard
+                key={client.id}
+                client={client}
+                bgColor={color}
+                status={status}
+              />
+            );
+          })
         )}
       </ScrollView>
     </View>
