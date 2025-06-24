@@ -1,36 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { View, Text } from 'react-native';
 
-export default function ClientCard({ client }) {
-  const [currentDay, setCurrentDay] = useState(null);
-
-  useEffect(() => {
-    // Intenta obtener la fecha actual de internet
-    fetch('https://worldtimeapi.org/api/timezone/America/Mexico_City')
-      .then(res => res.json())
-      .then(data => {
-        const day = new Date(data.datetime).getDate();
-        setCurrentDay(day);
-      })
-      .catch(() => {
-        // Si falla, usa la fecha local
-        setCurrentDay(new Date().getDate());
-      });
-  }, []);
-
-  let bgColor = '#eee';
-  if (currentDay !== null) {
-    const dueDay = parseInt(client.due_day, 10);
-    const diff = dueDay - currentDay;
-    if (diff > 3) {
-      bgColor = '#b6fcb6'; // Verde
-    } else if (diff >= 0 && diff <= 3) {
-      bgColor = '#fff9b1'; // Amarillo
-    } else {
-      bgColor = '#ffb1b1'; // Rojo
-    }
-  }
-
+export default function ClientCard({ client, bgColor, status }) {
   return (
     <View style={{
       backgroundColor: bgColor,
@@ -49,6 +20,7 @@ export default function ClientCard({ client }) {
       <Text>Cantidad: ${client.amount_due}</Text>
       {client.email ? <Text>Email: {client.email}</Text> : null}
       {client.phone ? <Text>Tel: {client.phone}</Text> : null}
+      <Text>Estatus: {status === 'por_pagar' ? 'Por pagar' : status === 'pago_proximo' ? 'Pago próximo' : 'No pagado'}</Text>
     </View>
   );
 }
