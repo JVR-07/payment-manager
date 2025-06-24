@@ -4,6 +4,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { UserContext } from '../components/UserContext';
 import { BACKEND_URL } from '@env';
 
+import ClientCard from '../components/ClientCard';
+
 export default function HomeScreen({ navigation }) {
 
   const { user } = useContext(UserContext);
@@ -61,24 +63,7 @@ export default function HomeScreen({ navigation }) {
           <Text style={{ fontSize: 18, color: '#888' }}>No existen clientes aún</Text>
         ) : (
           clients.map(client => (
-            <View key={client.id} style={{
-              backgroundColor: '#fff',
-              marginVertical: 8,
-              padding: 16,
-              borderRadius: 8,
-              width: '90%',
-              shadowColor: '#000',
-              shadowOpacity: 0.1,
-              shadowRadius: 4,
-              elevation: 2,
-            }}>
-              <Text style={{ fontWeight: 'bold', fontSize: 16 }}>{client.name}</Text>
-              <Text>Alias: {client.alias}</Text>
-              <Text>Corte: {client.due_day}</Text>
-              <Text>Cantidad: ${client.amount_due}</Text>
-              {client.email ? <Text>Email: {client.email}</Text> : null}
-              {client.phone ? <Text>Tel: {client.phone}</Text> : null}
-            </View>
+            <ClientCard key={client.id} client={client} />
           ))
         )}
       </ScrollView>
