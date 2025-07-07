@@ -1,15 +1,12 @@
-import React, { useContext, useState } from 'react';
-import { View, Text, TextInput, Button, Alert, ScrollView } from 'react-native';
-import { UserContext } from '../components/UserContext';
-import { BACKEND_URL } from '@env';
+import React, { useState } from 'react';
+import { View, Text, TextInput, Button, Alert, ScrollView, Platform } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 export default function AddClientScreen({ navigation }) {
-
-    const {user} = useContext(UserContext);
     const [name, setName] = useState('');
     const [alias, setAlias] = useState('');
-    const [dueDay, setDueDay] = useState('');
-    const [dueAmount, setDueAmount] = useState('');
+    const [creationDate, setCreationDate] = useState(new Date());
+    const [showDatePicker, setShowDatePicker] = useState(false);
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
 
@@ -18,16 +15,12 @@ export default function AddClientScreen({ navigation }) {
     };
 
     const handleSave = async () => {
-        if (!name || !alias || !dueDay || !dueAmount) {
-            console.log('Error', 'Todos los campos obligatorios deben estar completos.');
-            return;
-        }
-        if (parseInt(dueDay) < 1 || parseInt(dueDay) > 31) {
-            console.log('Error', 'La fecha de corte debe ser entre 01 y 31.');
+        if (!name || !alias || !creationDate) {
+            Alert.alert('Error', 'Nombre, alias y fecha de creación son obligatorios.');
             return;
         }
         if (!verifyEmail(email)) {
-            console.log('Error', 'El email no es válido.');
+            Alert.alert('Error', 'El email no es válido.');
             return;
         }
 
@@ -36,25 +29,23 @@ export default function AddClientScreen({ navigation }) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    name: name,
-                    alias: alias,
-                    amount_due: parseFloat(dueAmount),
-                    due_day: parseInt(dueDay),
+                    name,
+                    alias,
+                    creation_date: creationDate.toISOString().split('T')[0], // YYYY-MM-DD
                     email: email || null,
                     phone: phone || null,
-                    user_id: user?.id,
                 }),
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
-                console.log('Error', errorData.detail || 'No se pudo agregar el cliente');
+                Alert.alert('Error', errorData.detail || 'No se pudo agregar el cliente');
                 return;
             }
-            console.log('Éxito', 'Cliente agregado correctamente.');
+            Alert.alert('Éxito', 'Cliente agregado correctamente.');
             navigation.goBack();
         } catch (error) {
-            console.log('Error', 'Error de conexión con el servidor');
+            Alert.alert('Error', 'Error de conexión con el servidor');
         }
     };
 
@@ -75,23 +66,22 @@ export default function AddClientScreen({ navigation }) {
                 onChangeText={setAlias}
                 placeholder="Alias"
             />
-            <Text>Fecha de corte (01-31) *</Text>
-            <TextInput
-                style={{ borderWidth: 1, marginBottom: 10, padding: 8, borderRadius: 5 }}
-                value={dueDay}
-                onChangeText={text => setDueDay(text.replace(/[^0-9]/g, ''))}
-                placeholder="Ej: 15"
-                keyboardType="numeric"
-                maxLength={2}
+            <Text>Fecha de creación *</Text>
+            <Button
+                title={creationDate ? creationDate.toISOString().split('T')[0] : "Seleccionar fecha"}
+                onPress={() => setShowDatePicker(true)}
             />
-            <Text>Cantidad de pago *</Text>
-            <TextInput
-                style={{ borderWidth: 1, marginBottom: 10, padding: 8, borderRadius: 5 }}
-                value={dueAmount}
-                onChangeText={text => setDueAmount(text.replace(/[^0-9.]/g, ''))}
-                placeholder="Ej: 100.50"
-                keyboardType="decimal-pad"
-            />
+            {showDatePicker && (
+                <DateTimePicker
+                    value={creationDate}
+                    mode="date"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={(event, selectedDate) => {
+                        setShowDatePicker(false);
+                        if (selectedDate) setCreationDate(selectedDate);
+                    }}
+                />
+            )}
             <Text>Email</Text>
             <TextInput
                 style={{ borderWidth: 1, marginBottom: 10, padding: 8, borderRadius: 5 }}
@@ -105,13 +95,12 @@ export default function AddClientScreen({ navigation }) {
             <TextInput
                 style={{ borderWidth: 1, marginBottom: 20, padding: 8, borderRadius: 5 }}
                 value={phone}
-                onChangeText={text => setPhone(text.replace(/[^0-9]/g, ''))}
+                onChangeText={setPhone}
                 placeholder="Teléfono"
                 keyboardType="phone-pad"
-                maxLength={15}
+                maxLength={20}
             />
             <Button title="Guardar" onPress={handleSave} />
         </ScrollView>
     );
-
 }
