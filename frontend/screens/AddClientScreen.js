@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, Alert, ScrollView, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { BACKEND_URL } from '@env';
 
 export default function AddClientScreen({ navigation }) {
     const [name, setName] = useState('');
