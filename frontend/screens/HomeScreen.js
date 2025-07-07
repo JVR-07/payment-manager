@@ -19,10 +19,9 @@ export default function HomeScreen({ navigation }) {
   const [orderDir, setOrderDir] = useState('asc'); // 'asc', 'desc'
 
   async function fetchClients() {
-    if (!user || !user.id) return;
     setLoading(true);
     try {
-      const res = await fetch(`${BACKEND_URL}/users/${user.id}/clients`);
+      const res = await fetch(`${BACKEND_URL}/clients/`);
       if (res.ok) {
         const data = await res.json();
         setClients(data);
