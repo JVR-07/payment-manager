@@ -18,37 +18,28 @@ app.add_middleware(
 )
 
 
-# Create User
-@app.post("/users/", response_model=schemas.UserOut)
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = db.query(models.User).filter(models.User.email == user.email).first()
-    if db_user:
-        return db_user
-    db_user = models.User(email=user.email)
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
-
-# Get Clients by User
-@app.get("/users/{user_id}/clients", response_model=list[schemas.ClientOut])
-def get_clients_by_user(user_id: int, db: Session = Depends(get_db)):
-    return db.query(models.Client).filter(models.Client.user_id == user_id).all()
-
-# Create Client
 @app.post("/clients/", response_model=schemas.ClientOut)
 def create_client(client: schemas.ClientCreate, db: Session = Depends(get_db)):
     if db.query(models.Client).filter(models.Client.name == client.name).first():
         raise HTTPException(status_code=400, detail="Ya existe un cliente con ese nombre")
     if db.query(models.Client).filter(models.Client.alias == client.alias).first():
         raise HTTPException(status_code=400, detail="Ya existe un cliente con ese alias")
-    db_client = models.Client(**client.dict())
+    db_client = models.Client(
+        name=client.name,
+        alias=client.alias,
+        creation_date=client.creation_date,
+        email=client.email,
+        phone=client.phone
+    )
     db.add(db_client)
     db.commit()
     db.refresh(db_client)
     return db_client
 
-# Delete Client
+@app.get("/clients/", response_model=list[schemas.ClientOut])
+def get_clients(db: Session = Depends(get_db)):
+    return db.query(models.Client).all()
+
 @app.delete("/clients/{client_id}")
 def delete_client(client_id: int, db: Session = Depends(get_db)):
     client = db.query(models.Client).filter(models.Client.id == client_id).first()
@@ -58,7 +49,37 @@ def delete_client(client_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"detail": "Client deleted"}
 
-# Get Payments by Client
-@app.get("/clients/{client_id}/payments", response_model=list[schemas.PaymentOut])
-def get_payments_by_client(client_id: int, db: Session = Depends(get_db)):
-    return db.query(models.Payment).filter(models.Payment.client_id == client_id).all()
+
+@app.post("/contracts/", response_model=schemas.ContractOut)
+def create_contract(contract: schemas.ContractCreate, db: Session = Depends(get_db)):
+    db_contract = models.Contract(
+        first_payment_date=contract.first_payment_date,
+        total_amount=contract.total_amount,
+        total_payments=contract.total_payments,
+        client_id=contract.client_id
+    )
+    db.add(db_contract)
+    db.commit()
+    db.refresh(db_contract)
+    return db_contract
+
+@app.get("/clients/{client_id}/contracts", response_model=list[schemas.ContractOut])
+def get_contracts_by_client(client_id: int, db: Session = Depends(get_db)):
+    return db.query(models.Contract).filter(models.Contract.client_id == client_id).all()
+
+
+@app.post("/payments/", response_model=schemas.PaymentOut)
+def create_payment(payment: schemas.PaymentCreate, db: Session = Depends(get_db)):
+    db_payment = models.Payment(
+        payment_date=payment.payment_date,
+        payment_amount=payment.payment_amount,
+        contract_id=payment.contract_id
+    )
+    db.add(db_payment)
+    db.commit()
+    db.refresh(db_payment)
+    return db_payment
+
+@app.get("/contracts/{contract_id}/payments", response_model=list[schemas.PaymentOut])
+def get_payments_by_contract(contract_id: int, db: Session = Depends(get_db)):
+    return db.query(models.Payment).filter(models.Payment.contract_id == contract_id).all()

@@ -1,46 +1,51 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
-from datetime import datetime
+from datetime import date
 
-# User
-class UserCreate(BaseModel):
-    email: EmailStr
-
-class UserOut(BaseModel):
-    id: int
-    email: EmailStr
-
-    class Config:
-        orm_mode = True
-
-# Client
 class ClientCreate(BaseModel):
     name: str
     alias: str
-    amount_due: float
-    due_day: int
+    creation_date: date
     email: Optional[str] = None
     phone: Optional[str] = None
-    user_id: int
 
 class ClientOut(BaseModel):
     id: int
     name: str
     alias: str
-    amount_due: float
-    due_day: int
+    creation_date: date
     email: Optional[str]
     phone: Optional[str]
 
     class Config:
         orm_mode = True
 
-# Payment
+class ContractCreate(BaseModel):
+    first_payment_date: date
+    total_amount: float
+    total_payments: int
+    client_id: int
+
+class ContractOut(BaseModel):
+    id: int
+    first_payment_date: date
+    total_amount: float
+    total_payments: int
+    client_id: int
+
+    class Config:
+        orm_mode = True
+
+class PaymentCreate(BaseModel):
+    payment_date: date
+    payment_amount: float
+    contract_id: int
+
 class PaymentOut(BaseModel):
     id: int
-    amount: float
-    concept: Optional[str]
-    timestamp: datetime
+    payment_date: date
+    payment_amount: float
+    contract_id: int
 
     class Config:
         orm_mode = True
