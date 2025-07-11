@@ -1,0 +1,8 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+__pycache__/
+
+# local env files
+.env*.local
+.env

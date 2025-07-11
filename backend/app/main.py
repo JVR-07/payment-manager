@@ -17,6 +17,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+def root():
+    return {"message": "API funcionando"}
 
 @app.post("/clients/", response_model=schemas.ClientOut)
 def create_client(client: schemas.ClientCreate, db: Session = Depends(get_db)):
