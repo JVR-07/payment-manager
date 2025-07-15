@@ -59,7 +59,8 @@ def create_contract(contract: schemas.ContractCreate, db: Session = Depends(get_
         first_payment_date=contract.first_payment_date,
         total_amount=contract.total_amount,
         total_payments=contract.total_payments,
-        client_id=contract.client_id
+        client_id=contract.client_id,
+        status=contract.status
     )
     db.add(db_contract)
     db.commit()
