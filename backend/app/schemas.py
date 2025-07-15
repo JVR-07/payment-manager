@@ -25,6 +25,7 @@ class ContractCreate(BaseModel):
     total_amount: float
     total_payments: int
     client_id: int
+    status: str
 
 class ContractOut(BaseModel):
     id: int
@@ -32,6 +33,7 @@ class ContractOut(BaseModel):
     total_amount: float
     total_payments: int
     client_id: int
+    status: str
 
     class Config:
         orm_mode = True
