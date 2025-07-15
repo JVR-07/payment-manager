@@ -16,11 +16,8 @@ export default function ClientCard({ client, bgColor, status }) {
     }}>
       <Text style={{ fontWeight: 'bold', fontSize: 16 }}>{client.name}</Text>
       <Text>Alias: {client.alias}</Text>
-      <Text>Fecha de corte: {client.due_day}</Text>
-      <Text>Cantidad: ${client.amount_due}</Text>
       {client.email ? <Text>Email: {client.email}</Text> : null}
       {client.phone ? <Text>Tel: {client.phone}</Text> : null}
-      <Text>Estatus: {status === 'por_pagar' ? 'Por pagar' : status === 'pago_proximo' ? 'Pago próximo' : 'No pagado'}</Text>
     </View>
   );
 }
