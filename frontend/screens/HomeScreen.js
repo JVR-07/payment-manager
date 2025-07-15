@@ -64,6 +64,7 @@ export default function HomeScreen({ navigation }) {
               key={client.id}
               client={client}
               bgColor='#ffffff'
+              onPress={() => navigation.navigate('Details', { client })}
             />
           ))
         )}
