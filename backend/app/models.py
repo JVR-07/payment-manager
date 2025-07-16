@@ -21,8 +21,10 @@ class Contract(Base):
     total_amount = Column("totalamount", Numeric(10, 2), nullable=False)
     total_payments = Column("totalpayments", SmallInteger, nullable=False)
     client_id = Column("clientid", Integer, ForeignKey("clients.clientid"), nullable=False)
+    status = Column("status", String(20), nullable=False)
     client = relationship("Client", back_populates="contracts")
     payments = relationship("Payment", back_populates="contract")
+
 
 class Payment(Base):
     __tablename__ = "payments"
