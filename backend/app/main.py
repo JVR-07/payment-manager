@@ -77,6 +77,7 @@ def create_payment(payment: schemas.PaymentCreate, db: Session = Depends(get_db)
     db_payment = models.Payment(
         payment_date=payment.payment_date,
         payment_amount=payment.payment_amount,
+        status=payment.status or "Pending",
         contract_id=payment.contract_id
     )
     db.add(db_payment)
