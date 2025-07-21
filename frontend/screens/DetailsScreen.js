@@ -58,7 +58,6 @@ export default function DetailsScreen({ route }) {
     }));
   };
 
-  // --- Modal y lógica para crear contrato y pagos ---
   const resetModal = () => {
     setFirstPaymentDate(new Date());
     setTotalPayments("");
@@ -89,7 +88,24 @@ export default function DetailsScreen({ route }) {
       return;
     }
 
-    // 1. Crear contrato
+    //1. Verificar si existe contracto activo
+    let statusContract = "active";
+    let statusPayment = "Pending";
+    try{
+      const res = await fetch(`${BACKEND_LOCALHOST}/clients/${client.id}/contracts`);
+      if (res.ok) {
+        const contracts = await res.json();
+        if (contracts.some(c => c.status === "active")) {
+          statusContract = "inactive";
+          statusPayment = "inactive";
+        }
+      }
+    }
+    catch (e) {
+      Alert.alert("Error", "No se pudo crear el contrato");
+    }
+
+    // 2. Crear contrato
     let contractId = null;
     try {
       const res = await fetch(`${BACKEND_LOCALHOST}/contracts/`, {
@@ -100,7 +116,7 @@ export default function DetailsScreen({ route }) {
           total_amount: amount,
           total_payments: paymentsCount,
           client_id: client.id,
-          status: "active",
+          status: statusContract,
         }),
       });
       if (!res.ok) {
@@ -115,7 +131,7 @@ export default function DetailsScreen({ route }) {
       return;
     }
 
-    // 2. Calcular pagos semanales
+    // 3. Calcular pagos semanales
     const individualAmount = parseFloat((amount / paymentsCount).toFixed(2));
     let payments = [];
     let currentDate = new Date(firstPaymentDate);
@@ -124,12 +140,13 @@ export default function DetailsScreen({ route }) {
         payment_date: currentDate.toISOString().split("T")[0],
         payment_amount: individualAmount,
         contract_id: contractId,
+        status: statusPayment,
       });
       // Suma 7 días
       currentDate.setDate(currentDate.getDate() + 7);
     }
 
-    // 3. Crear pagos en el backend (uno por uno)
+    // 4. Crear pagos en el backend (uno por uno)
     try {
       for (const payment of payments) {
         await fetch(`${BACKEND_LOCALHOST}/payments/`, {
