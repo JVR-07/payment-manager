@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from app.db import get_db, engine
@@ -84,6 +84,16 @@ def create_payment(payment: schemas.PaymentCreate, db: Session = Depends(get_db)
     db.commit()
     db.refresh(db_payment)
     return db_payment
+
+@app.patch("/payments/{payment_id}", response_model=schemas.PaymentOut)
+def update_payment_status(payment_id: int, status: str = Body(...), db: Session = Depends(get_db)):
+    payment = db.query(models.Payment).filter(models.Payment.id == payment_id).first()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    payment.status = status
+    db.commit()
+    db.refresh(payment)
+    return payment
 
 @app.get("/contracts/{contract_id}/payments", response_model=list[schemas.PaymentOut])
 def get_payments_by_contract(contract_id: int, db: Session = Depends(get_db)):
