@@ -166,6 +166,11 @@ export default function DetailsScreen({ route }) {
     Alert.alert("Éxito", "Contrato y pagos creados correctamente");
   };
 
+  function getContractColor(status) {
+    if (status === "active") return "#b3e5fc";
+    return "#f9f9f9";
+  }
+
   return (
     <ScrollView contentContainerStyle={{ padding: 20 }}>
       <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10 }}>
@@ -193,7 +198,7 @@ export default function DetailsScreen({ route }) {
             key={contract.id}
             style={{
               marginTop: 16,
-              backgroundColor: "#f9f9f9",
+              backgroundColor: getContractColor(contract.status),
               borderRadius: 8,
               padding: 12,
             }}
@@ -323,10 +328,10 @@ export default function DetailsScreen({ route }) {
 }
 
 function getPaymentColor(status) {
-  if (status === "Pending") return "#b3e5fc";
+  if (status === "Pending") return "#fff";
   if (status === "Paid") return "#b6fcb6";
   if (status === "Overdue") return "#ffb1b1";
-  return "#fff";
+  return "#b3e5fc";
 }
 
 function PaymentsList({ contractId }) {
