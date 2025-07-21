@@ -31,5 +31,6 @@ class Payment(Base):
     id = Column("paymentid", Integer, primary_key=True, index=True)
     payment_date = Column("paymentdate", Date, nullable=False)
     payment_amount = Column("paymentamount", Numeric(10, 2), nullable=False)
+    status = Column("status", String(20), nullable=False, default="Pending")
     contract_id = Column("contractid", Integer, ForeignKey("contracts.contractid"), nullable=False)
     contract = relationship("Contract", back_populates="payments")

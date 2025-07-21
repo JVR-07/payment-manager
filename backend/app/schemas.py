@@ -41,12 +41,14 @@ class ContractOut(BaseModel):
 class PaymentCreate(BaseModel):
     payment_date: date
     payment_amount: float
+    status: Optional[str] = "Pending"
     contract_id: int
 
 class PaymentOut(BaseModel):
     id: int
     payment_date: date
     payment_amount: float
+    status: str
     contract_id: int
 
     class Config:
