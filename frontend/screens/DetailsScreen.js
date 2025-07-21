@@ -100,7 +100,7 @@ export default function DetailsScreen({ route }) {
           total_amount: amount,
           total_payments: paymentsCount,
           client_id: client.id,
-          status: "active"
+          status: "active",
         }),
       });
       if (!res.ok) {
@@ -305,6 +305,13 @@ export default function DetailsScreen({ route }) {
   );
 }
 
+function getPaymentColor(status) {
+  if (status === "Pending") return "#b3e5fc";
+  if (status === "Paid") return "#b6fcb6";
+  if (status === "Overdue") return "#ffb1b1";
+  return "#fff";
+}
+
 function PaymentsList({ contractId }) {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -330,6 +337,29 @@ function PaymentsList({ contractId }) {
     fetchPayments();
   }, [contractId]);
 
+  useEffect(() => {
+    console.log(payments);
+    async function updateLatePayments() {
+      const now = new Date();
+      for (const payment of payments) {
+        if (payment.status === "Pending") {
+          const [year, month, day] = payment.payment_date
+            .split("-")
+            .map(Number);
+          const dueDate = new Date(year, month - 1, day, 16, 0, 0, 0);
+          if (now > dueDate) {
+            await fetch(`${BACKEND_LOCALHOST}/payments/${payment.id}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ status: "Overdue" }),
+            });
+          }
+        }
+      }
+    }
+    if (payments.length > 0) updateLatePayments();
+  }, [payments]);
+
   if (loading)
     return (
       <ActivityIndicator size="small" color="#888" style={{ marginTop: 10 }} />
@@ -343,7 +373,7 @@ function PaymentsList({ contractId }) {
         <View
           key={payment.id}
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: getPaymentColor(payment.status),
             marginBottom: 6,
             padding: 8,
             borderRadius: 6,
@@ -351,6 +381,7 @@ function PaymentsList({ contractId }) {
         >
           <Text>Fecha: {payment.payment_date}</Text>
           <Text>Monto: ${payment.payment_amount}</Text>
+          <Text>Estatus: {payment.status}</Text>
         </View>
       ))}
     </View>
