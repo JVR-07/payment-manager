@@ -115,3 +115,22 @@ def get_movement_by_cdr(cdr: str, db: Session = Depends(get_db)):
     if not movement:
         raise HTTPException(status_code=404, detail="Movement not found")
     return movement
+
+@app.get("/systemutils/{key}", response_model=schemas.SystemUtilsOut)
+def get_system_value(key: str, db: Session = Depends(get_db)):
+    item = db.query(models.SystemUtils).filter(models.SystemUtils.key == key).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Key not found")
+    return item
+
+@app.post("/systemutils/", response_model=schemas.SystemUtilsOut)
+def set_system_value(data: schemas.SystemUtilsCreate, db: Session = Depends(get_db)):
+    item = db.query(models.SystemUtils).filter(models.SystemUtils.key == data.key).first()
+    if item:
+        item.value = data.value
+    else:
+        item = models.SystemUtils(key=data.key, value=data.value)
+        db.add(item)
+    db.commit()
+    db.refresh(item)
+    return item
