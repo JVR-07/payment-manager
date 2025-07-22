@@ -370,11 +370,15 @@ function PaymentsList({ contractId }) {
             .map(Number);
           const dueDate = new Date(year, month - 1, day, 16, 0, 0, 0);
           if (now > dueDate) {
+            /*
             await fetch(`${BACKEND_LOCALHOST}/payments/${payment.id}`, {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ status: "Overdue" }),
+              
             });
+            */
+           console.log(`pago ${payment.id} ${payment.payment_date} está atrasado`);
           }
         }
       }
