@@ -34,3 +34,12 @@ class Payment(Base):
     status = Column("status", String(20), nullable=False, default="Pending")
     contract_id = Column("contractid", Integer, ForeignKey("contracts.contractid"), nullable=False)
     contract = relationship("Contract", back_populates="payments")
+
+class Movement(Base):
+    __tablename__ = "movements"
+    id = Column("movementid", Integer, primary_key=True, index=True)
+    amount = Column("amount", Numeric(10, 2), nullable=False)
+    concept = Column("concept", String(20), nullable=False)
+    movement_date = Column("movementdate", Date, nullable=False)
+    cdr = Column("cdr", String(12), nullable=False)
+    payment_id = Column("paymentid", Integer, ForeignKey("payments.paymentid"), nullable=True)
