@@ -53,3 +53,21 @@ class PaymentOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+class MovementCreate(BaseModel):
+    amount: float
+    concept: str
+    movement_date: date
+    cdr: str
+    payment_id: Optional[int] = None
+
+class MovementOut(BaseModel):
+    id: int
+    amount: float
+    concept: str
+    movement_date: date
+    cdr: str
+    payment_id: Optional[int]
+
+    class Config:
+        orm_mode = True
