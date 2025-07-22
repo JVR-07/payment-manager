@@ -71,3 +71,15 @@ class MovementOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+class SystemUtilsOut(BaseModel):
+    id: int
+    key: str
+    value: Optional[str]
+
+    class Config:
+        orm_mode = True
+
+class SystemUtilsCreate(BaseModel):
+    key: str
+    value: Optional[str]
