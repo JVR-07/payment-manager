@@ -43,3 +43,10 @@ class Movement(Base):
     movement_date = Column("movementdate", Date, nullable=False)
     cdr = Column("cdr", String(12), nullable=False)
     payment_id = Column("paymentid", Integer, ForeignKey("payments.paymentid"), nullable=True)
+
+
+class SystemUtils(Base):
+    __tablename__ = "systemutils"
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String(50), unique=True, nullable=False)
+    value = Column(String, nullable=True)
