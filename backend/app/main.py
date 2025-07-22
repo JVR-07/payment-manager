@@ -85,16 +85,33 @@ def create_payment(payment: schemas.PaymentCreate, db: Session = Depends(get_db)
     db.refresh(db_payment)
     return db_payment
 
-@app.patch("/payments/{payment_id}", response_model=schemas.PaymentOut)
-def update_payment_status(payment_id: int, status: str = Body(...), db: Session = Depends(get_db)):
-    payment = db.query(models.Payment).filter(models.Payment.id == payment_id).first()
-    if not payment:
-        raise HTTPException(status_code=404, detail="Payment not found")
-    payment.status = status
-    db.commit()
-    db.refresh(payment)
-    return payment
 
 @app.get("/contracts/{contract_id}/payments", response_model=list[schemas.PaymentOut])
 def get_payments_by_contract(contract_id: int, db: Session = Depends(get_db)):
     return db.query(models.Payment).filter(models.Payment.contract_id == contract_id).all()
+
+
+@app.post("/movements/", response_model=schemas.MovementOut)
+def create_movement(movement: schemas.MovementCreate, db: Session = Depends(get_db)):
+    db_movement = models.Movement(
+        amount=movement.amount,
+        concept=movement.concept,
+        movement_date=movement.movement_date,
+        cdr=movement.cdr,
+        payment_id=movement.payment_id
+    )
+    db.add(db_movement)
+    db.commit()
+    db.refresh(db_movement)
+    return db_movement
+
+@app.get("/movements/", response_model=list[schemas.MovementOut])
+def get_movements(db: Session = Depends(get_db)):
+    return db.query(models.Movement).all()
+
+@app.get("/movements/{cdr}", response_model=schemas.MovementOut)
+def get_movement_by_cdr(cdr: str, db: Session = Depends(get_db)):
+    movement = db.query(models.Movement).filter(models.Movement.cdr == cdr).first()
+    if not movement:
+        raise HTTPException(status_code=404, detail="Movement not found")
+    return movement
