@@ -6,6 +6,7 @@ import TabNavigator from './TabNavigator';
 import AddClientScreen from '../screens/AddClientScreen';
 import DetailsScreen from '../screens/DetailsScreen';
 import WelcomeScreen from '../screens/WelcomeScreen';
+import MovementsScreen from '../screens/MovementsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -17,6 +18,7 @@ export default function StackNavigator() {
       <Stack.Screen name="AddClient" component={AddClientScreen}/>
       <Stack.Screen name="Details" component={DetailsScreen} />
       <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Movements" component={MovementsScreen} />
     </Stack.Navigator>
   );
 }
