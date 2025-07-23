@@ -8,7 +8,7 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f2f2f2' }}>
-      <Text style={{ fontSize: 32, fontWeight: 'bold', marginBottom: 40 }}> Hola Payment Manager</Text>
+      <Text style={{ fontSize: 32, fontWeight: 'bold', marginBottom: 40 }}> Bienvenido a P-MAN </Text>
       <TouchableOpacity
         style={{
           backgroundColor: '#ffffff',
@@ -18,7 +18,7 @@ export default function LoginScreen({ navigation }) {
         }}
         onPress={handleEnter}
       >
-        <Text style={{ fontSize: 16, color: '#000' }}>Entrar</Text>
+        <Text style={{ fontSize: 16, color: '#000' }}>Entrar a la aplicación</Text>
       </TouchableOpacity>
     </View>
   );
