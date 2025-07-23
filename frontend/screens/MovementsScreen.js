@@ -1,56 +1,79 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
-import { BACKEND_LOCALHOST, GOOGLE_AUTH_URL } from '@env';
+import { View, Text, ActivityIndicator, Button, ScrollView } from 'react-native';
+import { STORI_EMAIL_ADDRESS } from '@env';
 
-export default function MovementsScreen({ navigation }) {
+export default function MovementsScreen({ route, navigation }) {
     const [loading, setLoading] = useState(true);
-    const [tokenValid, setTokenValid] = useState(false);
+    const [emails, setEmails] = useState([]);
+    const accessToken = route.params?.accessToken;
 
     useEffect(() => {
-        async function checkAccessToken() {
+        if (!accessToken) {
+            navigation.replace('Login');
+            return;
+        }
+        async function fetchStoriEmails() {
+            setLoading(true);
             try {
-                // 1. Pide el access token al backend
-                const res = await fetch(`${BACKEND_LOCALHOST}/systemutils/google_access_token`);
-                if (!res.ok) {
-                    navigation.replace('Login');
+                const query = `from:${STORI_EMAIL_ADDRESS}`;
+                const listRes = await fetch(
+                    `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(query)}`,
+                    {
+                        headers: { Authorization: `Bearer ${accessToken}` }
+                    }
+                );
+                const listData = await listRes.json();
+                if (!listData.messages) {
+                    setEmails([]);
+                    setLoading(false);
                     return;
                 }
-                const data = await res.json();
-                if (!data.value) {
-                    navigation.replace('Login');
-                    return;
+                const emailHeaders = [];
+                for (const msg of listData.messages) {
+                    const msgRes = await fetch(
+                        `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=metadata&metadataHeaders=Subject`,
+                        {
+                            headers: { Authorization: `Bearer ${accessToken}` }
+                        }
+                    );
+                    const msgData = await msgRes.json();
+                    const subjectHeader = msgData.payload?.headers?.find(h => h.name === 'Subject');
+                    emailHeaders.push(subjectHeader ? subjectHeader.value : '(Sin asunto)');
                 }
-                // 2. Verifica si el token es válido con Google
-                const googleRes = await fetch(`${GOOGLE_AUTH_URL}?access_token=${data.value}`);
-                if (googleRes.ok) {
-                    setTokenValid(true);
-                } else {
-                    navigation.replace('Login');
-                }
+                setEmails(emailHeaders);
             } catch {
-                navigation.replace('Login');
+                setEmails([]);
             }
             setLoading(false);
         }
-        checkAccessToken();
-    }, []);
-
-    if (loading) {
-        return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f2f2f2' }}>
-                <ActivityIndicator size="large" color="#888" />
-            </View>
-        );
-    }
-
-    if (!tokenValid) {
-        return null; // Ya navega a LoginScreen
-    }
+        fetchStoriEmails();
+    }, [accessToken, navigation]);
 
     return (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f2f2f2' }}>
-            <Text style={{ fontSize: 32, fontWeight: 'bold', marginBottom: 40 }}>Movimientos bancarios</Text>
-            {/* Aquí puedes mostrar los movimientos */}
-        </View>
+        <ScrollView style={{ flex: 1, backgroundColor: '#f2f2f2' }}>
+            <View style={{ padding: 16 }}>
+                <Button title="Agregar Movimiento" onPress={() => {}} />
+            </View>
+            {loading ? (
+                <ActivityIndicator size="large" color="#888" style={{ marginTop: 20 }} />
+            ) : (
+                emails.length === 0 ? (
+                    <Text style={{ margin: 20, color: '#888' }}>No se encontraron correos de Stori.</Text>
+                ) : (
+                    emails.map((subject, idx) => (
+                        <View key={idx} style={{
+                            backgroundColor: '#fff',
+                            marginHorizontal: 16,
+                            marginVertical: 6,
+                            padding: 12,
+                            borderRadius: 8,
+                            elevation: 2,
+                        }}>
+                            <Text style={{ fontWeight: 'bold' }}>{subject}</Text>
+                        </View>
+                    ))
+                )
+            )}
+        </ScrollView>
     );
 }
