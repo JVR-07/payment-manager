@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from app.db import get_db, engine
 from app import models, schemas
 from app.models import Base
+import os
+import requests
 
 Base.metadata.create_all(bind=engine)
 
@@ -134,3 +136,22 @@ def set_system_value(data: schemas.SystemUtilsCreate, db: Session = Depends(get_
     db.commit()
     db.refresh(item)
     return item
+
+@app.post("/google/exchange-code/")
+def exchange_code(data: dict = Body(...)):
+    code = data.get("code")
+    redirect_uri = data.get("redirectUri")
+    code_verifier = data.get("codeVerifier")
+    client_id = os.getenv("GOOGLE_CLIENT_ID_WEB")
+    client_secret = os.getenv("GOOGLE_CLIENT_SECRET_WEB")
+    token_url = "https://oauth2.googleapis.com/token"
+    payload = {
+        "code": code,
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "redirect_uri": redirect_uri,
+        "grant_type": "authorization_code",
+        "code_verifier": code_verifier
+    }
+    res = requests.post(token_url, data=payload)
+    return res.json()
