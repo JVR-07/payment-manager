@@ -9,7 +9,8 @@ export default function MovementsScreen({ route, navigation }) {
 
     useEffect(() => {
         if (!accessToken) {
-            navigation.replace('Login');
+            console.log("No acces token");
+            navigation.replace('Login', {from: 'Movements'});
             return;
         }
         async function fetchStoriEmails() {
