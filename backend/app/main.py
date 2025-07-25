@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, Body
+from fastapi import FastAPI, Depends, HTTPException, Body, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from app.db import get_db, engine
@@ -6,10 +6,13 @@ from app import models, schemas
 from app.models import Base
 import os
 import requests
+from typing import List
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+router = APIRouter()
 
 app.add_middleware(
     CORSMiddleware,
@@ -155,3 +158,50 @@ def exchange_code(data: dict = Body(...)):
     }
     res = requests.post(token_url, data=payload)
     return res.json()
+
+#Router
+@router.post("/google/gmail-emails/")
+def get_gmail_emails(data: dict = Body(...)):
+    access_token = data.get("accessToken")
+    if not access_token:
+        raise HTTPException(status_code=400, detail="Access token required")
+
+    list_url = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
+    headers = {"Authorization": f"Bearer {access_token}"}
+
+    list_params = {
+        "maxResults": 10,
+    }
+
+    list_res = requests.get(list_url, headers=headers, params=list_params)
+    if list_res.status_code != 200:
+        raise HTTPException(status_code=list_res.status_code, detail=list_res.text)
+
+    messages = list_res.json().get("messages", [])
+    emails = []
+
+    for msg in messages:
+        msg_id = msg["id"]
+        msg_url = f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{msg_id}"
+        msg_res = requests.get(msg_url, headers=headers)
+
+        if msg_res.status_code == 200:
+            msg_data = msg_res.json()
+            headers_data = msg_data.get("payload", {}).get("headers", [])
+            snippet = msg_data.get("snippet", "")
+
+            subject = next((h["value"] for h in headers_data if h["name"] == "Subject"), "(Sin asunto)")
+            from_email = next((h["value"] for h in headers_data if h["name"] == "From"), "(Desconocido)")
+            date = next((h["value"] for h in headers_data if h["name"] == "Date"), "(Sin fecha)")
+
+            emails.append({
+                "subject": subject,
+                "from": from_email,
+                "date": date,
+                "snippet": snippet,
+            })
+
+    return {"emails": emails}
+
+# end
+app.include_router(router)
