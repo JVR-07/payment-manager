@@ -4,9 +4,16 @@ from sqlalchemy.orm import Session
 from app.db import get_db, engine
 from app import models, schemas
 from app.models import Base
+from pydantic import BaseModel
+from bs4 import BeautifulSoup
 import os
 import requests
-from typing import List
+import base64
+import re
+
+class TokenRequest(BaseModel):
+    access_token: str
+    refresh_token: str = None
 
 Base.metadata.create_all(bind=engine)
 
@@ -160,7 +167,7 @@ def exchange_code(data: dict = Body(...)):
     return res.json()
 
 #Router
-@router.post("/google/gmail-emails/")
+@router.post("/get-emails/")
 def get_gmail_emails(data: dict = Body(...)):
     access_token = data.get("accessToken")
     if not access_token:
@@ -171,12 +178,9 @@ def get_gmail_emails(data: dict = Body(...)):
         raise HTTPException(status_code=500, detail="EMAIL_ADDRESS not set in .env")
 
     headers = {"Authorization": f"Bearer {access_token}"}
-
     query = f'from:{email_address} subject:Recibiste'
     list_url = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
-    list_params = {
-        "q": query,
-    }
+    list_params = {"q": query}
 
     list_res = requests.get(list_url, headers=headers, params=list_params)
     if list_res.status_code != 200:
@@ -194,19 +198,65 @@ def get_gmail_emails(data: dict = Body(...)):
             msg_data = msg_res.json()
             headers_data = msg_data.get("payload", {}).get("headers", [])
             snippet = msg_data.get("snippet", "")
+            payload = msg_data.get("payload", {})
 
             subject = next((h["value"] for h in headers_data if h["name"] == "Subject"), "(Sin asunto)")
             from_email = next((h["value"] for h in headers_data if h["name"] == "From"), "(Desconocido)")
             date = next((h["value"] for h in headers_data if h["name"] == "Date"), "(Sin fecha)")
+
+            # Extraer cuerpo HTML
+            body = ""
+            parts = payload.get("parts", [])
+            for part in parts:
+                if part.get("mimeType") == "text/html":
+                    data = part.get("body", {}).get("data")
+                    if data:
+                        decoded_bytes = base64.urlsafe_b64decode(data + '==')
+                        body = decoded_bytes.decode("utf-8")
+                        break
+
+            monto, concepto, cdr = parse_email_body(body)
 
             emails.append({
                 "subject": subject,
                 "from": from_email,
                 "date": date,
                 "snippet": snippet,
+                "monto": monto,
+                "concepto": concepto,
+                "cdr": cdr,
             })
 
     return {"emails": emails}
+
+def parse_email_body(html_body):
+    soup = BeautifulSoup(html_body, "html.parser")
+
+    monto = None
+    concepto = None
+    cdr = None
+
+    monto_label = soup.find(text=re.compile(r'Monto', re.I))
+    if monto_label:
+        next_node = monto_label.find_next()
+        if next_node:
+            monto_text = next_node.get_text(strip=True)
+            monto = re.sub(r"[^\d\.]", "", monto_text)
+
+    concepto_label = soup.find(text=re.compile(r'Concepto', re.I))
+    if concepto_label:
+        next_node = concepto_label.find_next()
+        if next_node:
+            concepto = next_node.get_text(strip=True)
+
+    cdr_label = soup.find(text=re.compile(r'Clave de rastreo', re.I))
+    if cdr_label:
+        next_node = cdr_label.find_next()
+        if next_node:
+            cdr = next_node.get_text(strip=True)
+
+    return monto, concepto, cdr
+
 
 # end
 app.include_router(router)
