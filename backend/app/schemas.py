@@ -60,6 +60,12 @@ class MovementCreate(BaseModel):
     movement_date: datetime
     cdr: str
     payment_id: Optional[int] = None
+    
+class MovementUpdate(BaseModel):
+    amount: Optional[float] = None
+    concept: Optional[str] = None
+    movement_date: Optional[datetime] = None
+    payment_id: Optional[int] = None
 
 class MovementOut(BaseModel):
     id: int
