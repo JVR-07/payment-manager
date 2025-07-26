@@ -23,7 +23,7 @@ export default function DetailsScreen({ route }) {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
 
-  // Campos para el nuevo contrato
+  
   const [firstPaymentDate, setFirstPaymentDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [totalPayments, setTotalPayments] = useState("");
@@ -88,24 +88,23 @@ export default function DetailsScreen({ route }) {
       return;
     }
 
-    //1. Verificar si existe contracto activo
     let statusContract = "active";
     let statusPayment = "Pending";
-    try{
-      const res = await fetch(`${BACKEND_LOCALHOST}/clients/${client.id}/contracts`);
+    try {
+      const res = await fetch(
+        `${BACKEND_LOCALHOST}/clients/${client.id}/contracts`
+      );
       if (res.ok) {
         const contracts = await res.json();
-        if (contracts.some(c => c.status === "active")) {
+        if (contracts.some((c) => c.status === "active")) {
           statusContract = "inactive";
           statusPayment = "inactive";
         }
       }
-    }
-    catch (e) {
+    } catch (e) {
       Alert.alert("Error", "No se pudo crear el contrato");
     }
 
-    // 2. Crear contrato
     let contractId = null;
     try {
       const res = await fetch(`${BACKEND_LOCALHOST}/contracts/`, {
@@ -131,7 +130,6 @@ export default function DetailsScreen({ route }) {
       return;
     }
 
-    // 3. Calcular pagos semanales
     const individualAmount = parseFloat((amount / paymentsCount).toFixed(2));
     let payments = [];
     let currentDate = new Date(firstPaymentDate);
@@ -142,11 +140,9 @@ export default function DetailsScreen({ route }) {
         contract_id: contractId,
         status: statusPayment,
       });
-      // Suma 7 días
       currentDate.setDate(currentDate.getDate() + 7);
     }
 
-    // 4. Crear pagos en el backend (uno por uno)
     try {
       for (const payment of payments) {
         await fetch(`${BACKEND_LOCALHOST}/payments/`, {
@@ -215,11 +211,9 @@ export default function DetailsScreen({ route }) {
           </View>
         ))
       )}
-      {/* Botón para agregar contrato */}
       <View style={{ marginTop: 30 }}>
         <Button title="Agregar contrato" onPress={() => setShowModal(true)} />
       </View>
-      {/* Modal para crear contrato */}
       <Modal
         visible={showModal}
         transparent
@@ -370,15 +364,13 @@ function PaymentsList({ contractId }) {
             .map(Number);
           const dueDate = new Date(year, month - 1, day, 16, 0, 0, 0);
           if (now > dueDate) {
-            /*
             await fetch(`${BACKEND_LOCALHOST}/payments/${payment.id}`, {
-              method: "PATCH",
+              method: "PUT",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ status: "Overdue" }),
               
             });
-            */
-           console.log(`pago ${payment.id} ${payment.payment_date} está atrasado`);
+            payment.status = "Overdue";
           }
         }
       }
