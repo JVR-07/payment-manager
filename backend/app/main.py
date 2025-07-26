@@ -121,11 +121,23 @@ def create_movement(movement: schemas.MovementCreate, db: Session = Depends(get_
 def get_movements(db: Session = Depends(get_db)):
     return db.query(models.Movement).all()
 
-@app.get("/movements/{cdr}", response_model=schemas.MovementOut)
-def get_movement_by_cdr(cdr: str, db: Session = Depends(get_db)):
+@app.put("/movements/{cdr}", response_model=schemas.MovementOut)
+def update_movement(cdr: int, updated_data: schemas.MovementUpdate, db: Session = Depends(get_db)):
     movement = db.query(models.Movement).filter(models.Movement.cdr == cdr).first()
     if not movement:
         raise HTTPException(status_code=404, detail="Movement not found")
+
+    if updated_data.amount is not None:
+        movement.amount = updated_data.amount
+    if updated_data.concept is not None:
+        movement.concept = updated_data.concept
+    if updated_data.movement_date is not None:
+        movement.movement_date = updated_data.movement_date
+    if updated_data.payment_id is not None:
+        movement.payment_id = updated_data.payment_id
+
+    db.commit()
+    db.refresh(movement)
     return movement
 
 @app.get("/systemutils/{key}", response_model=schemas.SystemUtilsOut)
