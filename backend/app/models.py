@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, Numeric, ForeignKey, SmallInteger
+from sqlalchemy import Column, Integer, String, Date, Numeric, ForeignKey, SmallInteger, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -40,7 +40,7 @@ class Movement(Base):
     id = Column("movementid", Integer, primary_key=True, index=True)
     amount = Column("amount", Numeric(10, 2), nullable=False)
     concept = Column("concept", String(20), nullable=False)
-    movement_date = Column("movementdate", Date, nullable=False)
+    movement_date = Column("movementdate", DateTime, nullable=False)
     cdr = Column("cdr", String(12), nullable=False)
     payment_id = Column("paymentid", Integer, ForeignKey("payments.paymentid"), nullable=True)
 
