@@ -166,11 +166,16 @@ def get_gmail_emails(data: dict = Body(...)):
     if not access_token:
         raise HTTPException(status_code=400, detail="Access token required")
 
-    list_url = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
+    email_address = os.getenv("EMAIL_ADDRESS")
+    if not email_address:
+        raise HTTPException(status_code=500, detail="EMAIL_ADDRESS not set in .env")
+
     headers = {"Authorization": f"Bearer {access_token}"}
 
+    query = f'from:{email_address} subject:Recibiste'
+    list_url = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
     list_params = {
-        "maxResults": 10,
+        "q": query,
     }
 
     list_res = requests.get(list_url, headers=headers, params=list_params)
