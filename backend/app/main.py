@@ -168,7 +168,7 @@ def exchange_code(data: dict = Body(...)):
 
 #Router
 @router.post("/get-emails/")
-def get_gmail_emails(data: dict = Body(...)):
+def get_gmail_emails(data: dict = Body(...), db: Session = Depends(get_db)):
     access_token = data.get("accessToken")
     if not access_token:
         raise HTTPException(status_code=400, detail="Access token required")
@@ -204,9 +204,11 @@ def get_gmail_emails(data: dict = Body(...)):
             from_email = next((h["value"] for h in headers_data if h["name"] == "From"), "(Desconocido)")
             date = next((h["value"] for h in headers_data if h["name"] == "Date"), "(Sin fecha)")
 
-            # Extraer cuerpo HTML
             body = ""
             parts = payload.get("parts", [])
+            
+            saved_count = 0
+            
             for part in parts:
                 if part.get("mimeType") == "text/html":
                     data = part.get("body", {}).get("data")
@@ -215,19 +217,38 @@ def get_gmail_emails(data: dict = Body(...)):
                         body = decoded_bytes.decode("utf-8")
                         break
 
-            monto, concepto, cdr = parse_email_body(body)
+            _amount, _concept, _cdr = parse_email_body(body)
+            _cdr = _cdr[3:]
 
+            if not _cdr:
+                continue
+            existing = db.query(models.Movement).filter(models.Movement.cdr == _cdr).first()
+            if existing:
+                continue
+
+            db_movement = models.Movement(
+                amount=_amount,
+                concept=_concept,
+                movement_date=date,
+                cdr=_cdr,
+                payment_id=None
+            )
+            db.add(db_movement)
+            db.commit()
+            db.refresh(db_movement)
+            
             emails.append({
                 "subject": subject,
                 "from": from_email,
                 "date": date,
                 "snippet": snippet,
-                "monto": monto,
-                "concepto": concepto,
-                "cdr": cdr,
+                "monto": _amount,
+                "concepto": _concept,
+                "cdr": _cdr,
             })
+        saved_count += 1    
 
-    return {"emails": emails}
+    return {"message": "Sync completed", "saved_count": saved_count}
 
 def parse_email_body(html_body):
     soup = BeautifulSoup(html_body, "html.parser")
