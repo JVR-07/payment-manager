@@ -29,8 +29,21 @@ export default function MovementsScreen({ route, navigation }) {
         });
         const data = await res.json();
         console.log("Emails fetched:", data);
-        setEmails(data.emails);
-      } catch (error){
+        if (data.message === "Sync completed") {
+          const res = await fetch(`${BACKEND_LOCALHOST}/movements/`);
+          if (res.ok) {
+            const movements = await res.json();
+            console.log(movements);         
+          }
+          else {
+            setEmails([])
+            console.log("Error fetching movements:", res);
+          }
+        } else {
+          setEmails([]);
+          console.log("Error syncing emails")
+        }
+      } catch (error) {
         setEmails([]);
         console.log("Error fetching emails:");
         console.log(error);
@@ -56,9 +69,7 @@ export default function MovementsScreen({ route, navigation }) {
           No se encontraron correos.
         </Text>
       ) : (
-        <Text style={{ margin: 20, color: "#888" }}>
-          Correos encontrados.
-        </Text>
+        <Text style={{ margin: 20, color: "#888" }}>Correos encontrados.</Text>
       )}
     </ScrollView>
   );
