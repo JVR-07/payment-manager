@@ -11,7 +11,7 @@ import { BACKEND_LOCALHOST } from "@env";
 
 export default function MovementsScreen({ route, navigation }) {
   const [loading, setLoading] = useState(true);
-  const [emails, setEmails] = useState([]);
+  const [movements, setMovements] = useState([]);
   const accessToken = route.params?.accessToken;
 
   useEffect(() => {
@@ -24,14 +24,15 @@ export default function MovementsScreen({ route, navigation }) {
     setLoading(true);
 
     try {
-      const resultSync = await syncEmails();
+      const resultSync = await syncMovements();
       console.log(resultSync);
 
       if (resultSync?.message === "Sync completed") {
-        await fetchEmails();
+        await fetchMovements();
       } else {
-        console.log("Error syncing emails");
+        console.log("Error syncing movements");
       }
+
     } catch (error) {
       console.log("Unexpected error in run()", error);
     }
@@ -39,7 +40,7 @@ export default function MovementsScreen({ route, navigation }) {
     setLoading(false);
   };
 
-  async function syncEmails() {
+  async function syncMovements() {
     try {
       const res = await fetch(`${BACKEND_LOCALHOST}/get-emails/`, {
         method: "POST",
@@ -48,23 +49,23 @@ export default function MovementsScreen({ route, navigation }) {
       });
       return await res.json();
     } catch (error) {
-      console.log("Error syncing emails", error);
+      console.log("Error syncing movements", error);
     }
   }
 
-  async function fetchEmails() {
+  async function fetchMovements() {
     try {
-      setEmails([]);
+      setMovements([]);
       const res = await fetch(`${BACKEND_LOCALHOST}/movements/`);
       if (res.ok) {
         const movements = await res.json();
         console.log(movements);
-        setEmails(movements);
+        setMovements(movements);
       } else {
         console.log("Error fetching movements:", res);
       }
     } catch (error) {
-      console.log("Error fetching emails:", error);
+      console.log("Error fetching movements:", error);
     }
   }
 
@@ -82,12 +83,12 @@ export default function MovementsScreen({ route, navigation }) {
           color="#888"
           style={{ marginTop: 20 }}
         />
-      ) : emails.length === 0 ? (
+      ) : movements.length === 0 ? (
         <Text style={{ margin: 20, color: "#888" }}>
           No se encontraron correos.
         </Text>
       ) : (
-        emails.map((email, index) => (
+        movements.map((movement, index) => (
           <TouchableOpacity
             onPress={console.log("Card pressed: ", index)}
             activeOpacity={0.8}
@@ -108,11 +109,9 @@ export default function MovementsScreen({ route, navigation }) {
               <Text style={{ fontWeight: "bold", fontSize: 16 }}>
                 {index + 1}
               </Text>
-              {email.amount ? <Text>Monto: {email.amount}</Text> : null}
-              {email.concept ? <Text>Concepto: {email.concept}</Text> : null}
-              {email.movement_date ? (
-                <Text>Fecha: {email.movement_date}</Text>
-              ) : null}
+              {movement.amount ? <Text>Monto: {movement.amount}</Text> : null}
+              {movement.concept ? <Text>Concepto: {movement.concept}</Text> : null}
+              {movement.movement_date ? <Text>Fecha: {movement.movement_date}</Text> : null}
             </View>
           </TouchableOpacity>
         ))
