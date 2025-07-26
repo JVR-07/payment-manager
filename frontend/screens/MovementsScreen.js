@@ -22,7 +22,7 @@ export default function MovementsScreen({ route, navigation }) {
       setLoading(true);
       try {
         setEmails([]);
-        const res = await fetch(`${BACKEND_LOCALHOST}/google/gmail-emails/`, {
+        const res = await fetch(`${BACKEND_LOCALHOST}/get-emails/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ accessToken }),
