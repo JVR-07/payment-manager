@@ -1,6 +1,6 @@
-from pydantic import BaseModel, EmailStr
-from typing import Optional, List
-from datetime import date
+from pydantic import BaseModel
+from typing import Optional
+from datetime import date, datetime
 
 class ClientCreate(BaseModel):
     name: str
@@ -57,7 +57,7 @@ class PaymentOut(BaseModel):
 class MovementCreate(BaseModel):
     amount: float
     concept: str
-    movement_date: date
+    movement_date: datetime
     cdr: str
     payment_id: Optional[int] = None
 
@@ -65,7 +65,7 @@ class MovementOut(BaseModel):
     id: int
     amount: float
     concept: str
-    movement_date: date
+    movement_date: datetime
     cdr: str
     payment_id: Optional[int]
 
