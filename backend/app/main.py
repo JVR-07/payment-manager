@@ -64,7 +64,6 @@ def delete_client(client_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"detail": "Client deleted"}
 
-
 @app.post("/contracts/", response_model=schemas.ContractOut)
 def create_contract(contract: schemas.ContractCreate, db: Session = Depends(get_db)):
     db_contract = models.Contract(
@@ -83,7 +82,6 @@ def create_contract(contract: schemas.ContractCreate, db: Session = Depends(get_
 def get_contracts_by_client(client_id: int, db: Session = Depends(get_db)):
     return db.query(models.Contract).filter(models.Contract.client_id == client_id).all()
 
-
 @app.post("/payments/", response_model=schemas.PaymentOut)
 def create_payment(payment: schemas.PaymentCreate, db: Session = Depends(get_db)):
     db_payment = models.Payment(
@@ -97,11 +95,26 @@ def create_payment(payment: schemas.PaymentCreate, db: Session = Depends(get_db)
     db.refresh(db_payment)
     return db_payment
 
+@app.put("/payments/{payment_id}", response_model=schemas.PaymentOut)
+def update_payment(payment_id: int, updated_data: schemas.PaymentUpdate, db: Session = Depends(get_db)):
+    payment = db.query(models.Payment).filter(models.Payment.id == payment_id).first()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    if updated_data.payment_date is not None:
+        payment.payment_date = updated_data.payment_date
+    if updated_data.payment_amount is not None:
+        payment.payment_amount = updated_data.payment_amount
+    if updated_data.status is not None:
+        payment.status = updated_data.status
+    
+    db.commit()
+    db.refresh(payment)
+    return payment
 
 @app.get("/contracts/{contract_id}/payments", response_model=list[schemas.PaymentOut])
 def get_payments_by_contract(contract_id: int, db: Session = Depends(get_db)):
-    return db.query(models.Payment).filter(models.Payment.contract_id == contract_id).all()
-
+    return db.query(models.Payment).filter(models.Payment.contract_id == contract_id).order_by(models.Payment.id).all()
 
 @app.post("/movements/", response_model=schemas.MovementOut)
 def create_movement(movement: schemas.MovementCreate, db: Session = Depends(get_db)):
