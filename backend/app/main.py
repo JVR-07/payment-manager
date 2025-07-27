@@ -33,6 +33,14 @@ app.add_middleware(
 def root():
     return {"message": "API funcionando"}
 
+@app.get("/authorizedusers/", response_model=list[schemas.AuthorizedUsersOut])
+def get_authorized_users(db: Session = Depends(get_db)):
+    return db.query(models.AuthorizedUsers).all()
+
+@app.get("/authorizedusers/movadmin", response_model=list[schemas.AuthorizedUsersOut])
+def get_movadmin_users(db: Session = Depends(get_db)):
+    return db.query(models.AuthorizedUsers).filter(models.AuthorizedUsers.movadmin == True).all()
+
 @app.post("/clients/", response_model=schemas.ClientOut)
 def create_client(client: schemas.ClientCreate, db: Session = Depends(get_db)):
     if db.query(models.Client).filter(models.Client.name == client.name).first():
