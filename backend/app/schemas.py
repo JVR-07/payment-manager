@@ -2,6 +2,14 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import date, datetime
 
+class AuthorizedUsersOut(BaseModel):
+    id: int
+    email: str
+    movadmin: bool
+
+    class Config:
+        orm_mode = True
+
 class ClientCreate(BaseModel):
     name: str
     alias: str
