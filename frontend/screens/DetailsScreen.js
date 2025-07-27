@@ -23,7 +23,6 @@ export default function DetailsScreen({ route }) {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
 
-  
   const [firstPaymentDate, setFirstPaymentDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [totalPayments, setTotalPayments] = useState("");
@@ -164,159 +163,162 @@ export default function DetailsScreen({ route }) {
 
   function getContractColor(status) {
     if (status === "active") return "#b3e5fc";
-    return "#f9f9f9";
+    return "#D9E1F1";
   }
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 20 }}>
-      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10 }}>
-        {client.name}
-      </Text>
-      <Text>Alias: {client.alias}</Text>
-      {client.email ? <Text>Email: {client.email}</Text> : null}
-      {client.phone ? <Text>Tel: {client.phone}</Text> : null}
-      <Text style={{ marginTop: 20, fontSize: 20, fontWeight: "bold" }}>
-        Contratos
-      </Text>
-      {loading ? (
-        <ActivityIndicator
-          size="large"
-          color="#888"
-          style={{ marginTop: 20 }}
-        />
-      ) : contracts.length === 0 ? (
-        <Text style={{ marginTop: 10, color: "#888" }}>
-          No hay contratos para este cliente.
+    <ScrollView style={styles.mainView} contentContainerStyle={{ padding: 20 }}>
+      <View style={styles.bgView}>
+        <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10 }}>
+          {client.name}
         </Text>
-      ) : (
-        contracts.map((contract) => (
-          <View
-            key={contract.id}
-            style={{
-              marginTop: 16,
-              backgroundColor: getContractColor(contract.status),
-              borderRadius: 8,
-              padding: 12,
-            }}
-          >
-            <TouchableOpacity onPress={() => toggleExpand(contract.id)}>
-              <Text style={{ fontWeight: "bold", fontSize: 16 }}>
-                Contrato #{contract.id} - {contract.status}
-              </Text>
-              <Text>Primer pago: {contract.first_payment_date}</Text>
-              <Text>Total: ${contract.total_amount}</Text>
-              <Text>Pagos totales: {contract.total_payments}</Text>
-            </TouchableOpacity>
-            {expanded[contract.id] && <PaymentsList contractId={contract.id} />}
-          </View>
-        ))
-      )}
-      <View style={{ marginTop: 30 }}>
-        <Button title="Agregar contrato" onPress={() => setShowModal(true)} />
-      </View>
-      <Modal
-        visible={showModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowModal(false)}
-      >
-        <Pressable
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.3)",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-          onPress={() => setShowModal(false)}
-        >
-          <TouchableWithoutFeedback>
+        {client.email ? <Text>Email: {client.email}</Text> : null}
+        {client.phone ? <Text>Tel: {client.phone}</Text> : null}
+        <Text style={{ marginTop: 20, fontSize: 20, fontWeight: "bold" }}>
+          Contratos
+        </Text>
+        {loading ? (
+          <ActivityIndicator
+            size="large"
+            color="#888"
+            style={{ marginTop: 20 }}
+          />
+        ) : contracts.length === 0 ? (
+          <Text style={{ marginTop: 10, color: "#888" }}>
+            No hay contratos para este cliente.
+          </Text>
+        ) : (
+          contracts.map((contract, index) => (
             <View
+              key={index}
               style={{
-                backgroundColor: "#fff",
-                padding: 20,
-                borderRadius: 10,
-                width: "85%",
-                elevation: 5,
+                marginTop: 16,
+                backgroundColor: getContractColor(contract.status),
+                borderRadius: 8,
+                padding: 12,
               }}
-              onStartShouldSetResponder={() => true}
             >
-              <Text
-                style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}
+              <TouchableOpacity onPress={() => toggleExpand(contract.id)}>
+                <Text style={{ fontWeight: "bold", fontSize: 16 }}>
+                  Contrato #{index + 1} - {contract.status}
+                </Text>
+                <Text>Primer pago: {contract.first_payment_date}</Text>
+                <Text>Total: ${contract.total_amount}</Text>
+                <Text>Pagos totales: {contract.total_payments}</Text>
+              </TouchableOpacity>
+              {expanded[contract.id] && (
+                <PaymentsList contractId={contract.id} />
+              )}
+            </View>
+          ))
+        )}
+        <View style={{ marginTop: 30 }}>
+          <TouchableOpacity style={styles.button} onPress={() => setShowModal(true)}> Agregar Contrato </TouchableOpacity>
+        </View>
+        <Modal
+          visible={showModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowModal(false)}
+        >
+          <Pressable
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.3)",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+            onPress={() => setShowModal(false)}
+          >
+            <TouchableWithoutFeedback>
+              <View
+                style={{
+                  backgroundColor: "#fff",
+                  padding: 20,
+                  borderRadius: 10,
+                  width: "85%",
+                  elevation: 5,
+                }}
+                onStartShouldSetResponder={() => true}
               >
-                Nuevo Contrato
-              </Text>
-              <Text>Fecha del primer pago</Text>
-              {Platform.OS === "web" ? (
-                <input
-                  type="date"
-                  value={firstPaymentDate.toISOString().split("T")[0]}
-                  onChange={(e) =>
-                    setFirstPaymentDate(new Date(e.target.value))
-                  }
+                <Text
+                  style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}
+                >
+                  Nuevo Contrato
+                </Text>
+                <Text>Fecha del primer pago</Text>
+                {Platform.OS === "web" ? (
+                  <input
+                    type="date"
+                    value={firstPaymentDate.toISOString().split("T")[0]}
+                    onChange={(e) =>
+                      setFirstPaymentDate(new Date(e.target.value))
+                    }
+                    style={{
+                      marginVertical: 10,
+                      padding: 8,
+                      borderRadius: 5,
+                      borderWidth: 1,
+                      borderColor: "#ccc",
+                      width: "100%",
+                      marginBottom: 10,
+                    }}
+                  />
+                ) : (
+                  <>
+                    <Button
+                      title={
+                        firstPaymentDate
+                          ? firstPaymentDate.toISOString().split("T")[0]
+                          : "Seleccionar fecha"
+                      }
+                      onPress={() => setShowDatePicker(true)}
+                    />
+                    {showDatePicker && (
+                      <DateTimePicker
+                        value={firstPaymentDate}
+                        mode="date"
+                        display={Platform.OS === "ios" ? "spinner" : "default"}
+                        onChange={(event, selectedDate) => {
+                          setShowDatePicker(false);
+                          if (selectedDate) setFirstPaymentDate(selectedDate);
+                        }}
+                      />
+                    )}
+                  </>
+                )}
+                <Text style={{ marginTop: 10 }}>Cantidad de pagos</Text>
+                <TextInput
                   style={{
-                    marginVertical: 10,
+                    borderWidth: 1,
+                    marginBottom: 10,
                     padding: 8,
                     borderRadius: 5,
-                    borderWidth: 1,
-                    borderColor: "#ccc",
-                    width: "100%",
-                    marginBottom: 10,
                   }}
+                  value={totalPayments}
+                  onChangeText={setTotalPayments}
+                  placeholder="Ej: 10"
+                  keyboardType="numeric"
                 />
-              ) : (
-                <>
-                  <Button
-                    title={
-                      firstPaymentDate
-                        ? firstPaymentDate.toISOString().split("T")[0]
-                        : "Seleccionar fecha"
-                    }
-                    onPress={() => setShowDatePicker(true)}
-                  />
-                  {showDatePicker && (
-                    <DateTimePicker
-                      value={firstPaymentDate}
-                      mode="date"
-                      display={Platform.OS === "ios" ? "spinner" : "default"}
-                      onChange={(event, selectedDate) => {
-                        setShowDatePicker(false);
-                        if (selectedDate) setFirstPaymentDate(selectedDate);
-                      }}
-                    />
-                  )}
-                </>
-              )}
-              <Text style={{ marginTop: 10 }}>Cantidad de pagos</Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  marginBottom: 10,
-                  padding: 8,
-                  borderRadius: 5,
-                }}
-                value={totalPayments}
-                onChangeText={setTotalPayments}
-                placeholder="Ej: 10"
-                keyboardType="numeric"
-              />
-              <Text>Monto total</Text>
-              <TextInput
-                style={{
-                  borderWidth: 1,
-                  marginBottom: 20,
-                  padding: 8,
-                  borderRadius: 5,
-                }}
-                value={totalAmount}
-                onChangeText={setTotalAmount}
-                placeholder="Ej: 1000"
-                keyboardType="numeric"
-              />
-              <Button title="Crear contrato" onPress={handleCreateContract} />
-            </View>
-          </TouchableWithoutFeedback>
-        </Pressable>
-      </Modal>
+                <Text>Monto total</Text>
+                <TextInput
+                  style={{
+                    borderWidth: 1,
+                    marginBottom: 20,
+                    padding: 8,
+                    borderRadius: 5,
+                  }}
+                  value={totalAmount}
+                  onChangeText={setTotalAmount}
+                  placeholder="Ej: 1000"
+                  keyboardType="numeric"
+                />
+                <TouchableOpacity style={styles.button} onPress={handleCreateContract}> Crear contrato </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
+          </Pressable>
+        </Modal>
+      </View>
     </ScrollView>
   );
 }
@@ -325,7 +327,7 @@ function getPaymentColor(status) {
   if (status === "Pending") return "#fff";
   if (status === "Paid") return "#b6fcb6";
   if (status === "Overdue") return "#ffb1b1";
-  return "#b3e5fc";
+  return "#fff";
 }
 
 function PaymentsList({ contractId }) {
@@ -368,7 +370,6 @@ function PaymentsList({ contractId }) {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ status: "Overdue" }),
-              
             });
             payment.status = "Overdue";
           }
@@ -387,9 +388,9 @@ function PaymentsList({ contractId }) {
 
   return (
     <View style={{ marginTop: 10 }}>
-      {payments.map((payment) => (
+      {payments.map((payment, index) => (
         <View
-          key={payment.id}
+          key={index}
           style={{
             backgroundColor: getPaymentColor(payment.status),
             marginBottom: 6,
@@ -397,6 +398,7 @@ function PaymentsList({ contractId }) {
             borderRadius: 6,
           }}
         >
+          <Text>Numero de pago: {index + 1}</Text>
           <Text>Fecha: {payment.payment_date}</Text>
           <Text>Monto: ${payment.payment_amount}</Text>
           <Text>Estatus: {payment.status}</Text>
@@ -405,3 +407,26 @@ function PaymentsList({ contractId }) {
     </View>
   );
 }
+
+styles = {
+  mainView: {
+    backgroundColor: "#1A3D63",
+  },
+  bgView: {
+    backgroundColor: "#F6FAFD",
+    with: "95%",
+    height: "100%",
+    borderRadius: 25,
+    padding: 15,
+  },
+  button: {
+    backgroundColor: "#007AFF",
+    width: "100%",
+    padding: 10,
+    marginBottom: 10,
+    borderRadius: 10,
+    verticalAlign: "middle",
+    textAlign: "center",
+    color: "#F6FAFD",
+  },
+};

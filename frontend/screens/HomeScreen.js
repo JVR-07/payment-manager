@@ -54,11 +54,11 @@ export default function HomeScreen({ route, navigation }) {
   return (
     <View style={styles.bgContainer}>
       <ScrollView
+        style={{width:'100%', padding: 15}}
         contentContainerStyle={{
           flexGrow: 1,
           alignItems: "center",
           justifyContent: clients.length === 0 ? "center" : "flex-start",
-          paddingBottom: 80, // para que el botón flotante no tape contenido
         }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
