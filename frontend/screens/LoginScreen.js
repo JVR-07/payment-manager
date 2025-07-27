@@ -88,8 +88,8 @@ export default function LoginScreen({ navigation }) {
                     (user) => user.email === userInfo.email
                   ).movadmin,
                 });
-                navigation.navigate("Tabs", {
-                  screen: "Home",
+                navigation.replace("Tabs", {
+                  initialTab: "Contracts",
                 });
               } else {
                 setInvalidUser(true);

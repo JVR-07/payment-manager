@@ -1,11 +1,19 @@
-import React, { useContext, useState } from 'react';
-import { View, Text, Button, ScrollView, RefreshControl } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
-import { UserContext } from '../components/UserContext';
-import { BACKEND_LOCALHOST } from '@env';
-import ClientCard from '../components/ClientCard';
+import React, { useContext, useState } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  RefreshControl,
+  TouchableOpacity,
+} from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import { UserContext } from "../components/UserContext";
+import { BACKEND_LOCALHOST } from "@env";
+import ClientCard from "../components/ClientCard";
 
-export default function HomeScreen({ navigation }) {
+import { Ionicons } from "@expo/vector-icons";
+
+export default function HomeScreen({ route, navigation }) {
   const { user } = useContext(UserContext);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -35,7 +43,7 @@ export default function HomeScreen({ navigation }) {
   );
 
   const handleAddClient = () => {
-    navigation.navigate('AddClient');
+    navigation.navigate("AddClient");
   };
 
   const onRefresh = () => {
@@ -44,31 +52,59 @@ export default function HomeScreen({ navigation }) {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#f2f2f2' }}>
-      <View style={{ padding: 16 }}>
-        <Button title="Agregar cliente" onPress={handleAddClient} />
-      </View>
+    <View style={styles.bgContainer}>
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: clients.length === 0 ? 'center' : 'flex-start' }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          alignItems: "center",
+          justifyContent: clients.length === 0 ? "center" : "flex-start",
+          paddingBottom: 80, // para que el botón flotante no tape contenido
+        }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
         {loading ? (
-          <Text style={{ fontSize: 18, color: '#888' }}>Cargando...</Text>
+          <Text style={{ fontSize: 18, color: "#888" }}>Cargando...</Text>
         ) : clients.length === 0 ? (
-          <Text style={{ fontSize: 18, color: '#888' }}>No existen clientes aún</Text>
+          <Text style={{ fontSize: 18, color: "#888" }}>
+            No existen clientes aún
+          </Text>
         ) : (
-          clients.map(client => (
+          clients.map((client, index) => (
             <ClientCard
               key={client.id}
+              index={index}
               client={client}
-              bgColor='#ffffff'
-              onPress={() => navigation.navigate('Details', { client })}
+              onPress={() => navigation.navigate("Details", { client })}
             />
           ))
         )}
       </ScrollView>
+
+      <TouchableOpacity onPress={handleAddClient} style={styles.fab}>
+        <Ionicons name="add" size={30} color="#fff" />
+      </TouchableOpacity>
     </View>
   );
 }
+
+const styles = {
+  bgContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#1A3D63",
+  },
+  fab: {
+    position: "absolute",
+    bottom: 24,
+    right: 24,
+    backgroundColor: "#007AFF",
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+};
