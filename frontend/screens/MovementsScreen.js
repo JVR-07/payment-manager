@@ -140,6 +140,21 @@ export default function MovementsScreen({ route, navigation }) {
           } else {
             console.log("Error assigning movement:", await updateRes.text());
           }
+
+          const updatePay = await fetch(
+            `${BACKEND_LOCALHOST}/payments/${movement.payment_id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                status: "Paid",
+              }),
+            }
+          );
+          if (updatePay.ok) {
+            console.log(`Payment ${movement.payment_id} updated successfully`);
+          } else {
+            console.log("Error updating payment:", await updatePay.text());
+          }
         } catch (error) {
           console.error("Unexpected error during assignment:", error);
         }
