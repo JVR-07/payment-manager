@@ -42,6 +42,7 @@ class Movement(Base):
     concept = Column("concept", String(20), nullable=False)
     movement_date = Column("movementdate", DateTime, nullable=False)
     cdr = Column("cdr", String(12), nullable=False)
+    status = Column("status", String(20), nullable=False, default="Unassigned")
     payment_id = Column("paymentid", Integer, ForeignKey("payments.paymentid"), nullable=True)
 
 
