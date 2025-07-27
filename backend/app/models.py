@@ -1,8 +1,14 @@
-from sqlalchemy import Column, Integer, String, Date, Numeric, ForeignKey, SmallInteger, DateTime
+from sqlalchemy import Column, Integer, String, Date, Numeric, ForeignKey, SmallInteger, DateTime, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
+
+class AuthorizedUsers(Base):
+    __tablename__ = "authorizedusers"
+    id = Column("id", Integer, primary_key=True, index=True)
+    email = Column("email", String(255), unique=True, nullable=False)
+    movadmin = Column("movadmin", Boolean, nullable=False, default=False)
 
 class Client(Base):
     __tablename__ = "clients"
