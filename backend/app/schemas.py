@@ -64,12 +64,14 @@ class MovementCreate(BaseModel):
     concept: str
     movement_date: datetime
     cdr: str
+    status: Optional[str] = "Unnasigned"
     payment_id: Optional[int] = None
     
 class MovementUpdate(BaseModel):
     amount: Optional[float] = None
     concept: Optional[str] = None
     movement_date: Optional[datetime] = None
+    status: Optional[str] = None
     payment_id: Optional[int] = None
 
 class MovementOut(BaseModel):
@@ -78,6 +80,7 @@ class MovementOut(BaseModel):
     concept: str
     movement_date: datetime
     cdr: str
+    status: str
     payment_id: Optional[int]
 
     class Config:
