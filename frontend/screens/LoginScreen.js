@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import { makeRedirectUri, useAuthRequest } from "expo-auth-session";
 import { GOOGLE_CLIENT_ID_WEB, GOOGLE_CLIENT_ID_ANDROID } from "@env";
 import { Platform } from "react-native";
 import { BACKEND_LOCALHOST } from "@env";
+import { UserContext } from "../components/UserContext";
 
 import AntDesign from "react-native-vector-icons/AntDesign";
 
@@ -19,6 +20,7 @@ const discovery = {
 export default function LoginScreen({ navigation }) {
   const [loginError, setLoginError] = useState(false);
   const [invalidUser, setInvalidUser] = useState(false);
+  const { setUser } = useContext(UserContext);
 
   const clientId =
     Platform.OS === "android" ? GOOGLE_CLIENT_ID_ANDROID : GOOGLE_CLIENT_ID_WEB;
@@ -79,9 +81,15 @@ export default function LoginScreen({ navigation }) {
               if (
                 authorizedUsers.find((user) => user.email === userInfo.email)
               ) {
+                setUser({
+                  access_token: accessToken,
+                  email: userInfo.email,
+                  movadmin: authorizedUsers.find(
+                    (user) => user.email === userInfo.email
+                  ).movadmin,
+                });
                 navigation.navigate("Tabs", {
                   screen: "Home",
-                  params: { accessToken },
                 });
               } else {
                 setInvalidUser(true);
@@ -111,9 +119,7 @@ export default function LoginScreen({ navigation }) {
             <Text style={styles.loginError}>Error al iniciar sesión.</Text>
           )}
           {invalidUser && (
-            <Text style={styles.loginError}>
-              Usuario sin autorización.
-            </Text>
+            <Text style={styles.loginError}>Usuario sin autorización.</Text>
           )}
           <TouchableOpacity
             style={styles.loginButton}
