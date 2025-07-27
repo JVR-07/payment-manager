@@ -14,7 +14,6 @@ import { BACKEND_LOCALHOST } from "@env";
 export default function AddClientScreen({ navigation }) {
   const [name, setName] = useState("");
   const [alias, setAlias] = useState("");
-  const [creationDate, setCreationDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -24,10 +23,10 @@ export default function AddClientScreen({ navigation }) {
   };
 
   const handleSave = async () => {
-    if (!name || !alias || !creationDate) {
+    if (!name || !phone || !email) {
       Alert.alert(
         "Error",
-        "Nombre, alias y fecha de creación son obligatorios."
+        "Nombre, numero y email son obligatorios."
       );
       return;
     }
@@ -42,10 +41,9 @@ export default function AddClientScreen({ navigation }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
-          alias,
-          creation_date: creationDate.toISOString().split("T")[0], // YYYY-MM-DD
+          creation_date: today.toISOString().split("T")[0], // YYYY-MM-DD
           email: email || null,
-          phone: phone || null,
+          phone: phone,
         }),
       });
 
@@ -82,7 +80,7 @@ export default function AddClientScreen({ navigation }) {
           onChangeText={setName}
           placeholder="Nombre"
         />
-        <Text>Email</Text>
+        <Text>Email *</Text>
         <TextInput
           style={styles.textInput}
           value={email}
@@ -91,7 +89,7 @@ export default function AddClientScreen({ navigation }) {
           keyboardType="email-address"
           autoCapitalize="none"
         />
-        <Text>Teléfono</Text>
+        <Text>Teléfono *</Text>
         <TextInput
           style={styles.textInput}
           value={phone}
