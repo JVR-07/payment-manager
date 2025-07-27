@@ -130,6 +130,13 @@ def update_payment(payment_id: int, updated_data: schemas.PaymentUpdate, db: Ses
 def get_payments_by_contract(contract_id: int, db: Session = Depends(get_db)):
     return db.query(models.Payment).filter(models.Payment.contract_id == contract_id).order_by(models.Payment.id).all()
 
+@app.get("/contracts/{contract_id}/payments/first-pending", response_model=schemas.PaymentOut)
+def get_first_pending_payment(contract_id: int, db: Session = Depends(get_db)):
+    payment = db.query(models.Payment).filter(models.Payment.contract_id == contract_id, models.Payment.status == "Pending").order_by(models.Payment.payment_date).first()
+    if not payment:
+        raise HTTPException(status_code=404, detail="No pending payments found for this contract")
+    return payment
+
 @app.post("/movements/", response_model=schemas.MovementOut)
 def create_movement(movement: schemas.MovementCreate, db: Session = Depends(get_db)):
     db_movement = models.Movement(
