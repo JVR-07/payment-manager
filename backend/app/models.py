@@ -14,10 +14,9 @@ class Client(Base):
     __tablename__ = "clients"
     id = Column("clientid", Integer, primary_key=True, index=True)
     name = Column("name", String(80), nullable=False)
-    alias = Column("alias", String(20), nullable=False)
     creation_date = Column("creationdate", Date, nullable=False)
     email = Column("email", String(100), nullable=True)
-    phone = Column("phone", String(20), nullable=True)
+    phone = Column("phone", String(20), nullable=False)
     contracts = relationship("Contract", back_populates="client")
 
 class Contract(Base):
