@@ -66,7 +66,7 @@ def delete_client(client_id: int, db: Session = Depends(get_db)):
 
 @app.get("/clients/{alias}", response_model=schemas.ClientOut)
 def get_client_by_alias(alias: str, db: Session = Depends(get_db)):
-    client = db.query(models.Client).filter(models.Clients.alias == alias).first()
+    client = db.query(models.Client).filter(models.Client.alias == alias).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
     return client
@@ -88,13 +88,6 @@ def create_contract(contract: schemas.ContractCreate, db: Session = Depends(get_
 @app.get("/clients/{client_id}/contracts", response_model=list[schemas.ContractOut])
 def get_contracts_by_client(client_id: int, db: Session = Depends(get_db)):
     return db.query(models.Contract).filter(models.Contract.client_id == client_id).all()
-
-@app.get("/clients/{client_id}/contracts/active", response_model=schemas.ContractOut)
-def get_active_contracts_by_client(client_id: int, db: Session = Depends(get_db)):
-    contract = db.query(models.Contract).filter(models.Contract.client_id == client_id, models.Contract.status == "Active").first()
-    if not contract:
-        raise HTTPException(status_code=404, detail="Active contract not found for this client")
-    return contract
 
 @app.post("/payments/", response_model=schemas.PaymentOut)
 def create_payment(payment: schemas.PaymentCreate, db: Session = Depends(get_db)):
@@ -158,7 +151,7 @@ def get_movements(db: Session = Depends(get_db)):
 
 @app.put("/movements/{cdr}", response_model=schemas.MovementOut)
 def update_movement(cdr: int, updated_data: schemas.MovementUpdate, db: Session = Depends(get_db)):
-    movement = db.query(models.Movement).filter(models.Movement.cdr == cdr).first()
+    movement = db.query(models.Movement).filter(models.Movement.cdr == str(cdr)).first()
     if not movement:
         raise HTTPException(status_code=404, detail="Movement not found")
 
