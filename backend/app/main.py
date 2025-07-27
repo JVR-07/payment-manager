@@ -64,6 +64,13 @@ def delete_client(client_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"detail": "Client deleted"}
 
+@app.get("/clients/{alias}", response_model=schemas.ClientOut)
+def get_client_by_alias(alias: str, db: Session = Depends(get_db)):
+    client = db.query(models.Client).filter(models.Clients.alias == alias).first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    return client
+
 @app.post("/contracts/", response_model=schemas.ContractOut)
 def create_contract(contract: schemas.ContractCreate, db: Session = Depends(get_db)):
     db_contract = models.Contract(
@@ -123,6 +130,7 @@ def create_movement(movement: schemas.MovementCreate, db: Session = Depends(get_
         concept=movement.concept,
         movement_date=movement.movement_date,
         cdr=movement.cdr,
+        status = movement.status or "Unassigned",
         payment_id=movement.payment_id
     )
     db.add(db_movement)
@@ -146,6 +154,8 @@ def update_movement(cdr: int, updated_data: schemas.MovementUpdate, db: Session 
         movement.concept = updated_data.concept
     if updated_data.movement_date is not None:
         movement.movement_date = updated_data.movement_date
+    if updated_data.status is not None:
+        movement.status = updated_data.status
     if updated_data.payment_id is not None:
         movement.payment_id = updated_data.payment_id
 
