@@ -12,18 +12,16 @@ class AuthorizedUsersOut(BaseModel):
 
 class ClientCreate(BaseModel):
     name: str
-    alias: str
     creation_date: date
     email: Optional[str] = None
-    phone: Optional[str] = None
+    phone: str
 
 class ClientOut(BaseModel):
     id: int
     name: str
-    alias: str
     creation_date: date
     email: Optional[str]
-    phone: Optional[str]
+    phone: str
 
     class Config:
         orm_mode = True
