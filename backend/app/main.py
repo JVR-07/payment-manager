@@ -45,11 +45,10 @@ def get_movadmin_users(db: Session = Depends(get_db)):
 def create_client(client: schemas.ClientCreate, db: Session = Depends(get_db)):
     if db.query(models.Client).filter(models.Client.name == client.name).first():
         raise HTTPException(status_code=400, detail="Ya existe un cliente con ese nombre")
-    if db.query(models.Client).filter(models.Client.alias == client.alias).first():
-        raise HTTPException(status_code=400, detail="Ya existe un cliente con ese alias")
+    if db.query(models.Client).filter(models.Client.phone == client.phone).first():
+        raise HTTPException(status_code=400, detail="Ya existe un cliente con ese numero")
     db_client = models.Client(
         name=client.name,
-        alias=client.alias,
         creation_date=client.creation_date,
         email=client.email,
         phone=client.phone
@@ -72,9 +71,9 @@ def delete_client(client_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"detail": "Client deleted"}
 
-@app.get("/clients/{alias}", response_model=schemas.ClientOut)
-def get_client_by_alias(alias: str, db: Session = Depends(get_db)):
-    client = db.query(models.Client).filter(models.Client.alias == alias).first()
+@app.get("/clients/{phone}", response_model=schemas.ClientOut)
+def get_client_by_alias(phone: str, db: Session = Depends(get_db)):
+    client = db.query(models.Client).filter(models.Client.phone == phone).first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
     return client
