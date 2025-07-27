@@ -89,6 +89,13 @@ def create_contract(contract: schemas.ContractCreate, db: Session = Depends(get_
 def get_contracts_by_client(client_id: int, db: Session = Depends(get_db)):
     return db.query(models.Contract).filter(models.Contract.client_id == client_id).all()
 
+@app.get("/clients/{client_id}/contracts/active", response_model=schemas.ContractOut)
+def get_active_contracts_by_client(client_id: int, db: Session = Depends(get_db)):
+    contract = db.query(models.Contract).filter(models.Contract.client_id == client_id, models.Contract.status == "Active").first()
+    if not contract:
+        raise HTTPException(status_code=404, detail="Active contract not found for this client")
+    return contract
+
 @app.post("/payments/", response_model=schemas.PaymentOut)
 def create_payment(payment: schemas.PaymentCreate, db: Session = Depends(get_db)):
     db_payment = models.Payment(
