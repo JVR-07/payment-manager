@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import {
   View,
   Text,
@@ -8,16 +8,26 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { BACKEND_LOCALHOST } from "@env";
+import { UserContext } from "../components/UserContext";
+import MovementCard from "../components/MovementCard";
 
 export default function MovementsScreen({ route, navigation }) {
   const [loading, setLoading] = useState(true);
   const [movements, setMovements] = useState([]);
-  const accessToken = route.params?.accessToken;
+  const [invalidUser, setInvalidUser] = useState(false);
+  const { user } = useContext(UserContext);
 
   useEffect(() => {
-    if (!accessToken) {
+    if (!user?.access_token) {
       navigation.replace("Login", { from: "Movements" });
       return;
+    }
+    if (!user?.movadmin) {
+      setInvalidUser(true);
+      setLoading(false);
+      return;
+    } else {
+      setInvalidUser(false);
     }
 
     const run = async () => {
@@ -35,7 +45,7 @@ export default function MovementsScreen({ route, navigation }) {
       } catch (error) {
         console.log("Unexpected error in run()", error);
       }
-      
+
       setLoading(false);
     };
 
@@ -44,7 +54,7 @@ export default function MovementsScreen({ route, navigation }) {
         const res = await fetch(`${BACKEND_LOCALHOST}/get-emails/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ accessToken }),
+          body: JSON.stringify({ accessToken: user?.access_token }),
         });
         return await res.json();
       } catch (error) {
@@ -58,9 +68,9 @@ export default function MovementsScreen({ route, navigation }) {
         const res = await fetch(`${BACKEND_LOCALHOST}/movements/`);
         if (res.ok) {
           const _movements = await res.json();
-          console.log("fetched movements:",_movements);
+          console.log("fetched movements:", _movements);
           setMovements(_movements);
-          console.log("movements 1:",movements)
+          console.log("movements 1:", movements);
         } else {
           console.log("Error fetching movements:", res);
         }
@@ -70,12 +80,14 @@ export default function MovementsScreen({ route, navigation }) {
     }
 
     run();
-  }, [accessToken, navigation]);
+  }, [user?.accessToken, navigation]);
 
   useEffect(() => {
     async function AssignMovement() {
       console.log("movements 2:", movements);
-      const unassignedMovements = movements.filter((movement) => movement.status === "Unassigned");
+      const unassignedMovements = movements.filter(
+        (movement) => movement.status === "Unassigned"
+      );
       console.log("Unassigned movements:", unassignedMovements);
       if (unassignedMovements.length === 0) {
         console.log("No unassigned movements to assign");
@@ -97,7 +109,10 @@ export default function MovementsScreen({ route, navigation }) {
             `${BACKEND_LOCALHOST}/clients/${client.id}/contracts`
           );
           if (!contractRes.ok) {
-            console.log("Error fetching active contract for client:", contractRes);
+            console.log(
+              "Error fetching active contract for client:",
+              contractRes
+            );
             continue;
           }
           const contracts = await contractRes.json();
@@ -142,7 +157,8 @@ export default function MovementsScreen({ route, navigation }) {
           }
 
           const updatePay = await fetch(
-            `${BACKEND_LOCALHOST}/payments/${movement.payment_id}`, {
+            `${BACKEND_LOCALHOST}/payments/${movement.payment_id}`,
+            {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -161,58 +177,57 @@ export default function MovementsScreen({ route, navigation }) {
       }
     }
 
-    AssignMovement()
+    AssignMovement();
   }, [movements]);
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: "#f2f2f2" }}>
-      <View style={{ padding: 16 }}>
-        <Button title="Agregar Movimiento" onPress={() => {}} />
-      </View>
+    <View style={styles.bgContainer}>
+    <ScrollView>
       {loading ? (
         <ActivityIndicator
           size="large"
           color="#888"
           style={{ marginTop: 20 }}
         />
+      ) : invalidUser ? (
+        <Text
+          style={{
+            color: "#f10303ff",
+            textAlign: "center",
+            verticalAlign: "middle",
+            fontWeight: "bold",
+            fontSize: 30,
+          }}
+        >
+          Usuario sin permisos
+        </Text>
       ) : movements.length === 0 ? (
         <Text style={{ margin: 20, color: "#888" }}>
-          No se encontraron correos.
+          No se encontraron movimientos.
         </Text>
       ) : (
-        movements.map((movement, index) => (
-          <TouchableOpacity
-            onPress={console.log("Card pressed: ", index)}
-            activeOpacity={0.8}
-          >
-            <View
-              style={{
-                backgroundColor: "#fff",
-                marginVertical: 8,
-                padding: 16,
-                borderRadius: 8,
-                width: "90%",
-                shadowColor: "#000",
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-                elevation: 2,
-              }}
-            >
-              <Text style={{ fontWeight: "bold", fontSize: 16 }}>
-                {index + 1}
-              </Text>
-              {movement.amount ? <Text>Monto: {movement.amount}</Text> : null}
-              {movement.concept ? (
-                <Text>Concepto: {movement.concept}</Text>
-              ) : null}
-              {movement.movement_date ? (
-                <Text>Fecha: {movement.movement_date}</Text>
-              ) : null}
-              {movement.status ? <Text>Estatus: {movement.status}</Text> : null}
-            </View>
-          </TouchableOpacity>
-        ))
+        <View
+          style={styles.bgView}
+        >
+          {movements.map((movement, index) => (
+            <MovementCard
+              _index={index}
+              _movement={movement}
+              onPress={console.log("pressed")}
+            />
+          ))}
+        </View>
       )}
     </ScrollView>
+    </View>
   );
 }
+
+const styles = {
+  bgContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#1A3D63",
+  },
+};
