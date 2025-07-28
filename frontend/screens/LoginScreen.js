@@ -45,7 +45,7 @@ export default function LoginScreen({ navigation }) {
 
         try {
           const res = await fetch(
-            `${BACKEND_LOCALHOST}/google/exchange-code/`,
+            `${BACKEND_URL}/google/exchange-code/`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
