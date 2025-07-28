@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { UserContext } from "../components/UserContext";
-import { BACKEND_LOCALHOST } from "@env";
+import { BACKEND_URL } from "@env";
 import ClientCard from "../components/ClientCard";
 
 import { Ionicons } from "@expo/vector-icons";
@@ -22,7 +22,7 @@ export default function HomeScreen({ route, navigation }) {
   async function fetchClients() {
     setLoading(true);
     try {
-      const res = await fetch(`${BACKEND_LOCALHOST}/clients/`);
+      const res = await fetch(`${BACKEND_URL}/clients/`);
       if (res.ok) {
         const data = await res.json();
         setClients(data);

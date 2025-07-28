@@ -9,7 +9,7 @@ import {
   Platform,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { BACKEND_LOCALHOST } from "@env";
+import { BACKEND_URL } from "@env";
 
 export default function AddClientScreen({ navigation }) {
   const [name, setName] = useState("");
@@ -36,7 +36,7 @@ export default function AddClientScreen({ navigation }) {
     }
 
     try {
-      const response = await fetch(`${BACKEND_LOCALHOST}/clients/`, {
+      const response = await fetch(`${BACKEND_URL}/clients/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

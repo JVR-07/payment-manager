@@ -14,7 +14,7 @@ import {
   TouchableWithoutFeedback,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { BACKEND_LOCALHOST } from "@env";
+import { BACKEND_URL } from "@env";
 
 export default function DetailsScreen({ route }) {
   const { client } = route.params;
@@ -36,7 +36,7 @@ export default function DetailsScreen({ route }) {
     setLoading(true);
     try {
       const res = await fetch(
-        `${BACKEND_LOCALHOST}/clients/${client.id}/contracts`
+        `${BACKEND_URL}/clients/${client.id}/contracts`
       );
       if (res.ok) {
         const data = await res.json();
@@ -91,7 +91,7 @@ export default function DetailsScreen({ route }) {
     let statusPayment = "Pending";
     try {
       const res = await fetch(
-        `${BACKEND_LOCALHOST}/clients/${client.id}/contracts`
+        `${BACKEND_URL}/clients/${client.id}/contracts`
       );
       if (res.ok) {
         const contracts = await res.json();
@@ -106,7 +106,7 @@ export default function DetailsScreen({ route }) {
 
     let contractId = null;
     try {
-      const res = await fetch(`${BACKEND_LOCALHOST}/contracts/`, {
+      const res = await fetch(`${BACKEND_URL}/contracts/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -144,7 +144,7 @@ export default function DetailsScreen({ route }) {
 
     try {
       for (const payment of payments) {
-        await fetch(`${BACKEND_LOCALHOST}/payments/`, {
+        await fetch(`${BACKEND_URL}/payments/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payment),
@@ -339,7 +339,7 @@ function PaymentsList({ contractId }) {
       setLoading(true);
       try {
         const res = await fetch(
-          `${BACKEND_LOCALHOST}/contracts/${contractId}/payments`
+          `${BACKEND_URL}/contracts/${contractId}/payments`
         );
         if (res.ok) {
           const data = await res.json();
@@ -366,7 +366,7 @@ function PaymentsList({ contractId }) {
             .map(Number);
           const dueDate = new Date(year, month - 1, day, 16, 0, 0, 0);
           if (now > dueDate) {
-            await fetch(`${BACKEND_LOCALHOST}/payments/${payment.id}`, {
+            await fetch(`${BACKEND_URL}/payments/${payment.id}`, {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ status: "Overdue" }),

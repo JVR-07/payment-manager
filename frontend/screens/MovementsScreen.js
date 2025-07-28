@@ -7,7 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
-import { BACKEND_LOCALHOST } from "@env";
+import { BACKEND_URL } from "@env";
 import { UserContext } from "../components/UserContext";
 import MovementCard from "../components/MovementCard";
 
@@ -51,7 +51,7 @@ export default function MovementsScreen({ route, navigation }) {
 
     async function syncMovements() {
       try {
-        const res = await fetch(`${BACKEND_LOCALHOST}/get-emails/`, {
+        const res = await fetch(`${BACKEND_URL}/get-emails/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ accessToken: user?.access_token }),
@@ -65,7 +65,7 @@ export default function MovementsScreen({ route, navigation }) {
     async function fetchMovements() {
       try {
         setMovements([]);
-        const res = await fetch(`${BACKEND_LOCALHOST}/movements/`);
+        const res = await fetch(`${BACKEND_URL}/movements/`);
         if (res.ok) {
           const _movements = await res.json();
           console.log("fetched movements:", _movements);
@@ -97,7 +97,7 @@ export default function MovementsScreen({ route, navigation }) {
       for (const movement of unassignedMovements) {
         try {
           const clientRes = await fetch(
-            `${BACKEND_LOCALHOST}/clients/${movement.concept}`
+            `${BACKEND_URL}/clients/${movement.concept}`
           );
           if (!clientRes.ok) {
             console.log("Error fetching client by alias:", movement);
@@ -106,7 +106,7 @@ export default function MovementsScreen({ route, navigation }) {
           const client = await clientRes.json();
 
           const contractRes = await fetch(
-            `${BACKEND_LOCALHOST}/clients/${client.id}/contracts`
+            `${BACKEND_URL}/clients/${client.id}/contracts`
           );
           if (!contractRes.ok) {
             console.log(
@@ -125,7 +125,7 @@ export default function MovementsScreen({ route, navigation }) {
           console.log("Active contract found:", contract);
 
           const paymentRes = await fetch(
-            `${BACKEND_LOCALHOST}/contracts/${contract.id}/payments/first-pending`
+            `${BACKEND_URL}/contracts/${contract.id}/payments/first-pending`
           );
           if (!paymentRes.ok) {
             console.log(
@@ -137,7 +137,7 @@ export default function MovementsScreen({ route, navigation }) {
           const payment = await paymentRes.json();
 
           const updateRes = await fetch(
-            `${BACKEND_LOCALHOST}/movements/${movement.cdr}`,
+            `${BACKEND_URL}/movements/${movement.cdr}`,
             {
               method: "PUT",
               headers: { "Content-Type": "application/json" },

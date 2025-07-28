@@ -74,7 +74,7 @@ export default function LoginScreen({ navigation }) {
               const userInfo = await userInfoResponse.json();
 
               const authRes = await fetch(
-                `${BACKEND_LOCALHOST}/authorizedusers/`
+                `${BACKEND_URL}/authorizedusers/`
               );
               const authorizedUsers = await authRes.json();
 
