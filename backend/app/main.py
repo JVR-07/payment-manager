@@ -21,7 +21,10 @@ app = FastAPI()
 
 router = APIRouter()
 
-origins = os.getenv("CORS_ORIGINS", "http://localhost").split(",")
+origins = [
+    "http://localhost:8081",
+    os.getenv("CORS_ORIGINS"), 
+]
 
 app.add_middleware(
     CORSMiddleware,
