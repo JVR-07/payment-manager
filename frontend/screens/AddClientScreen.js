@@ -52,7 +52,7 @@ export default function AddClientScreen({ navigation }) {
       console.log("Cliente agregado correctamente.");
       navigation.goBack();
     } catch (error) {
-      console.log("Error", "Error de conexión con el servidor");
+      console.log("Error de conexión con el servidor: ", error);
     }
   };
 
