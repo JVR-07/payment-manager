@@ -4,7 +4,7 @@ import * as WebBrowser from "expo-web-browser";
 import { makeRedirectUri, useAuthRequest } from "expo-auth-session";
 import { GOOGLE_CLIENT_ID_WEB, GOOGLE_CLIENT_ID_ANDROID } from "@env";
 import { Platform } from "react-native";
-import { BACKEND_LOCALHOST } from "@env";
+import { BACKEND_URL } from "@env";
 import { UserContext } from "../components/UserContext";
 
 import AntDesign from "react-native-vector-icons/AntDesign";
