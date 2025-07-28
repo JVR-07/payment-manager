@@ -38,7 +38,7 @@ export default function AddClientScreen({ navigation }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
-          creation_date: today.toISOString().split("T")[0], // YYYY-MM-DD
+          creation_date: new Date().toISOString().split("T")[0],
           email: email || null,
           phone: phone,
         }),
