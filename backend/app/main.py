@@ -23,7 +23,7 @@ router = APIRouter()
 
 origins = [
     "http://localhost:8081",
-    os.getenv("CORS_ORIGINS"), 
+    *os.getenv("CORS_ORIGINS", "").split(","), 
 ]
 
 app.add_middleware(
