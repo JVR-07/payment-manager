@@ -24,14 +24,11 @@ export default function AddClientScreen({ navigation }) {
 
   const handleSave = async () => {
     if (!name || !phone || !email) {
-      Alert.alert(
-        "Error",
-        "Nombre, numero y email son obligatorios."
-      );
+      console.log("Nombre, numero y email son obligatorios.");
       return;
     }
     if (!verifyEmail(email)) {
-      Alert.alert("Error", "El email no es válido.");
+      console.log("El email no es válido.");
       return;
     }
 
@@ -49,16 +46,13 @@ export default function AddClientScreen({ navigation }) {
 
       if (!response.ok) {
         const errorData = await response.json();
-        Alert.alert(
-          "Error",
-          errorData.detail || "No se pudo agregar el cliente"
-        );
+        console.log("No se pudo agregar el cliente ", errorData.detail);
         return;
       }
-      Alert.alert("Éxito", "Cliente agregado correctamente.");
+      console.log("Cliente agregado correctamente.");
       navigation.goBack();
     } catch (error) {
-      Alert.alert("Error", "Error de conexión con el servidor");
+      console.log("Error", "Error de conexión con el servidor");
     }
   };
 
@@ -98,7 +92,10 @@ export default function AddClientScreen({ navigation }) {
           keyboardType="phone-pad"
           maxLength={20}
         />
-        <TouchableOpacity style={styles.button} onPress={handleSave}> Guardar </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={handleSave}>
+          {" "}
+          Guardar{" "}
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -136,5 +133,5 @@ const styles = {
     verticalAlign: "middle",
     textAlign: "center",
     color: "#F6FAFD",
-  }
+  },
 };
