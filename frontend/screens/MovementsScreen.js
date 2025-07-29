@@ -157,7 +157,7 @@ export default function MovementsScreen({ route, navigation }) {
           }
 
           const updatePay = await fetch(
-            `${BACKEND_LOCALHOST}/payments/${movement.payment_id}`,
+            `${BACKEND_URL}/payments/${movement.payment_id}`,
             {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
