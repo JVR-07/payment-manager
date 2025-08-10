@@ -53,7 +53,7 @@ export async function handleLoginFlow({ response, request, backendUrl, redirectU
         setInvalidUser(true);
       }
     } catch (error) {
-      console.error("Error en login:", error);
+      console.log("Error en login:", error);
       throw error;
     }
   }
