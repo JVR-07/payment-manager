@@ -1,17 +1,17 @@
-
-import { ClientsProvider } from "./ClientsContext";
-import { ContractsProvider } from "./ContractsContext";
-import { MovementsProvider } from "./MovementsContext";
-import { UsersProvider } from "./UsersContext";
+import React from 'react';
+import { GlobalClientsProvider } from "./ClientsContext";
+import { GlobalContractsProvider } from "./ContractsContext";
+import { GlobalMovementsProvider } from "./MovementsContext";
+import { UserProvider } from "./UserContext";
 
 export const RootProvider = ({ children }) => {
   return (
-    <MovementsProvider>
-      <ClientsProvider>
-        <ContractsProvider>
-          <UsersProvider>{children}</UsersProvider>
-        </ContractsProvider>
-      </ClientsProvider>
-    </MovementsProvider>
+    <GlobalMovementsProvider>
+      <GlobalClientsProvider>
+        <GlobalContractsProvider>
+          <UserProvider>{children}</UserProvider>
+        </GlobalContractsProvider>
+      </GlobalClientsProvider>
+    </GlobalMovementsProvider>
   );
 };
