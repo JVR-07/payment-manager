@@ -1,5 +1,5 @@
 import { createContext, useState, useContext } from "react";
-import { fetchClientsFromAPI } from "../services/clientsUtils";
+import { fetchClientsFromAPI } from "../services/clientUtils";
 import { BACKEND_URL } from "@env";
 
 const GlobalClientsContext = createContext();
