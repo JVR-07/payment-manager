@@ -39,7 +39,7 @@ export default function HomeScreen({ navigation }) {
         contentContainerStyle={{
           flexGrow: 1,
           alignItems: "center",
-          justifyContent: clients.length === 0 ? "center" : "flex-start",
+          justifyContent: clientArray.length === 0 ? "center" : "flex-start",
         }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
