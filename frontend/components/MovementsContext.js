@@ -2,7 +2,7 @@ import React, { createContext, useState, useContext } from 'react';
 
 const GlobalMovementsContext = createContext();
 
-export const GlobalMovementProvider = ({ children }) => {
+export const GlobalMovementsProvider = ({ children }) => {
   const [movementArray, setMovementArray] = useState([]);
 
   const addItem = (item) => {
