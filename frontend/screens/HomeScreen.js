@@ -7,39 +7,20 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { UserContext } from "../components/UserContext";
-import { BACKEND_URL } from "@env";
 import ClientCard from "../components/ClientCard";
+import {useClientsArray} from "../components/ClientsContext";
 
 import { Ionicons } from "@expo/vector-icons";
 
-export default function HomeScreen({ route, navigation }) {
-  const { user } = useContext(UserContext);
-  const [clients, setClients] = useState([]);
+export default function HomeScreen({ navigation }) {
+  const { clientArray, loadClientsFromAPI } = useClientsArray();
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  async function fetchClients() {
-    setLoading(true);
-    try {
-      const res = await fetch(`${BACKEND_URL}/clients/`);
-      if (res.ok) {
-        const data = await res.json();
-        setClients(data);
-      } else {
-        setClients([]);
-      }
-    } catch (e) {
-      setClients([]);
-    }
-    setLoading(false);
-    setRefreshing(false);
-  }
-
   useFocusEffect(
     React.useCallback(() => {
-      fetchClients();
-    }, [user?.id])
+      loadClientsFromAPI(setLoading, setRefreshing);
+    }, [])
   );
 
   const handleAddClient = () => {
@@ -48,7 +29,7 @@ export default function HomeScreen({ route, navigation }) {
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchClients();
+    loadClientsFromAPI(setLoading, setRefreshing);
   };
 
   return (
@@ -66,12 +47,12 @@ export default function HomeScreen({ route, navigation }) {
       >
         {loading ? (
           <Text style={{ fontSize: 18, color: "#888" }}>Cargando...</Text>
-        ) : clients.length === 0 ? (
+        ) : clientArray.length === 0 ? (
           <Text style={{ fontSize: 18, color: "#888" }}>
             No existen clientes aún
           </Text>
         ) : (
-          clients.map((client, index) => (
+          clientArray.map((client, index) => (
             <ClientCard
               key={client.id}
               index={index}
