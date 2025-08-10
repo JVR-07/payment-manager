@@ -1,4 +1,6 @@
-import React, { createContext, useState, useContext } from 'react';
+import { createContext, useState, useContext } from "react";
+import { fetchClientsFromAPI } from "../services/clientsUtils";
+import { BACKEND_URL } from "@env";
 
 const GlobalClientsContext = createContext();
 
@@ -15,9 +17,16 @@ export const GlobalClientsProvider = ({ children }) => {
 
   const editItemById = (id, updatedFields) => {
     setClientArray((prev) =>
-      prev.map((obj) =>
-        obj.id === id ? { ...obj, ...updatedFields } : obj
-      )
+      prev.map((obj) => (obj.id === id ? { ...obj, ...updatedFields } : obj))
+    );
+  };
+
+  const loadClientsFromAPI = async (setLoading, setRefreshing) => {
+    await fetchClientsFromAPI(
+      BACKEND_URL,
+      setClientArray,
+      setLoading,
+      setRefreshing
     );
   };
 
@@ -27,7 +36,8 @@ export const GlobalClientsProvider = ({ children }) => {
         clientArray,
         addItem,
         removeItemById,
-        editItemById
+        editItemById,
+        loadClientsFromAPI,
       }}
     >
       {children}
