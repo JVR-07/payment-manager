@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { BACKEND_URL } from "@env";
+import { fetchContractsFromAPI } from "../services/contractUtils";
 
 export default function DetailsScreen({ route }) {
   const { client } = route.params;
@@ -29,26 +30,10 @@ export default function DetailsScreen({ route }) {
   const [totalAmount, setTotalAmount] = useState("");
 
   useEffect(() => {
-    fetchContracts();
-  }, [client.id]);
-
-  async function fetchContracts() {
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `${BACKEND_URL}/clients/${client.id}/contracts`
-      );
-      if (res.ok) {
-        const data = await res.json();
-        setContracts(data);
-      } else {
-        setContracts([]);
-      }
-    } catch {
-      setContracts([]);
-    }
-    setLoading(false);
-  }
+    setLoading(true)
+    fetchContractsFromAPI(BACKEND_URL, setContracts, client.id);
+    setLoading(false)
+  }, []);
 
   const toggleExpand = (contractId) => {
     setExpanded((prev) => ({
