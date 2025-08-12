@@ -1,6 +1,5 @@
 
-export async function fetchClientsFromAPI(backendUrl, setClients, setLoading, setRefreshing) {
-  setLoading?.(true);
+export async function fetchClientsFromAPI(backendUrl, setClients) {
 
   try {
     const res = await fetch(`${backendUrl}/clients/`);
@@ -11,10 +10,7 @@ export async function fetchClientsFromAPI(backendUrl, setClients, setLoading, se
       setClients([]);
     }
   } catch (e) {
-    console.error("Error al obtener clientes:", e);
+    console.log("Error al obtener clientes:", e);
     setClients([]);
   }
-
-  setLoading?.(false);
-  setRefreshing?.(false);
 }
