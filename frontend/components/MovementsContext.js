@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext } from 'react';
+import { runMovementsSync } from '../services/movementsUtils'
 
 const GlobalMovementsContext = createContext();
 
@@ -21,13 +22,18 @@ export const GlobalMovementsProvider = ({ children }) => {
     );
   };
 
+  const loadMovementsFromAPI = async (accessToken) => {
+    await runMovementsSync(accessToken, setMovementArray);
+  }
+
   return (
     <GlobalMovementsContext.Provider
       value={{
         movementArray,
         addItem,
         removeItemById,
-        editItemById
+        editItemById,
+        loadMovementsFromAPI
       }}
     >
       {children}
