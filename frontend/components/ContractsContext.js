@@ -1,4 +1,7 @@
-import React, { createContext, useState, useContext } from 'react';
+
+import { createContext, useState, useContext } from "react";
+import { fetchContractsFromAPI } from "../services/contractUtils";
+import { BACKEND_URL } from "@env";
 
 const GlobalContractsContext = createContext();
 
@@ -15,10 +18,11 @@ export const GlobalContractsProvider = ({ children }) => {
 
   const editItemById = (id, updatedFields) => {
     setContractsArray((prev) =>
-      prev.map((obj) =>
-        obj.id === id ? { ...obj, ...updatedFields } : obj
-      )
+      prev.map((obj) => (obj.id === id ? { ...obj, ...updatedFields } : obj))
     );
+  };
+  const loadContractsFromAPI = async (id) => {
+    await fetchContractsFromAPI(BACKEND_URL, setContractsArray, id);
   };
 
   return (
@@ -27,7 +31,8 @@ export const GlobalContractsProvider = ({ children }) => {
         contractsArray,
         addItem,
         removeItemById,
-        editItemById
+        editItemById,
+        loadContractsFromAPI,
       }}
     >
       {children}
