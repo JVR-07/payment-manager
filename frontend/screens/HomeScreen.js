@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,20 +8,37 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import ClientCard from "../components/ClientCard";
-import {useClientsArray} from "../components/ClientsContext";
+import { useClientsArray } from "../components/ClientsContext";
+import { useMovementsArray } from "../components/MovementsContext";
+import { UserContext } from "../components/UserContext";
+import { assignUnassignedMovements } from "../services/assignMovements";
 
 import { Ionicons } from "@expo/vector-icons";
 
 export default function HomeScreen({ navigation }) {
   const { clientArray, loadClientsFromAPI } = useClientsArray();
+  const { movementArray, loadMovementsFromAPI } = useMovementsArray();
+  const { user } = useContext(UserContext);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
-      loadClientsFromAPI(setLoading, setRefreshing);
+      setLoading(true);
+      loadClientsFromAPI();
+
+      if (user?.movadmin) {
+        loadMovementsFromAPI(user.access_token);
+      }
+      setLoading(false);
     }, [])
   );
+
+  useEffect(() => {
+    assignUnassignedMovements(clientArray, movementArray)
+    console.log(movementArray)
+  }, [clientArray, movementArray]
+);
 
   const handleAddClient = () => {
     navigation.navigate("AddClient");
@@ -29,13 +46,14 @@ export default function HomeScreen({ navigation }) {
 
   const onRefresh = () => {
     setRefreshing(true);
-    loadClientsFromAPI(setLoading, setRefreshing);
+    loadClientsFromAPI();
+    setRefreshing(false);
   };
 
   return (
     <View style={styles.bgContainer}>
       <ScrollView
-        style={{width:'100%', padding: 15}}
+        style={{ width: "100%", padding: 15 }}
         contentContainerStyle={{
           flexGrow: 1,
           alignItems: "center",
