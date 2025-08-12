@@ -21,13 +21,8 @@ export const GlobalClientsProvider = ({ children }) => {
     );
   };
 
-  const loadClientsFromAPI = async (setLoading, setRefreshing) => {
-    await fetchClientsFromAPI(
-      BACKEND_URL,
-      setClientArray,
-      setLoading,
-      setRefreshing
-    );
+  const loadClientsFromAPI = async () => {
+    await fetchClientsFromAPI(BACKEND_URL, setClientArray);
   };
 
   return (
