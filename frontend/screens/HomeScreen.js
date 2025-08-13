@@ -19,7 +19,7 @@ export default function HomeScreen({ navigation }) {
   const { clientArray, loadClientsFromAPI } = useClientsArray();
   const { movementArray, loadMovementsFromAPI } = useMovementsArray();
   const { user } = useContext(UserContext);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   useFocusEffect(
@@ -72,10 +72,10 @@ export default function HomeScreen({ navigation }) {
         ) : (
           clientArray.map((client, index) => (
             <ClientCard
-              key={client.id}
               index={index}
               client={client}
-              onPress={() => navigation.navigate("Details", { client })}
+              onPressCard={() => navigation.navigate("Details", { client })}
+              onEdit={() => navigation.navigate("EditClient", { client })}
             />
           ))
         )}
