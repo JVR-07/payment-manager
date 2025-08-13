@@ -4,17 +4,12 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  Alert,
   ScrollView,
-  Platform,
 } from "react-native";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { BACKEND_URL } from "@env";
 
 export default function AddClientScreen({ navigation }) {
   const [name, setName] = useState("");
-  const [alias, setAlias] = useState("");
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
 
@@ -43,7 +38,6 @@ export default function AddClientScreen({ navigation }) {
           phone: phone,
         }),
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         console.log("No se pudo agregar el cliente ", errorData.detail);
