@@ -17,6 +17,7 @@ class Client(Base):
     creation_date = Column("creationdate", Date, nullable=False)
     email = Column("email", String(100), nullable=True)
     phone = Column("phone", String(20), nullable=False)
+    status = Column("status", String(20), nullable=False, default="Created")
     contracts = relationship("Contract", back_populates="client")
 
 class Contract(Base):

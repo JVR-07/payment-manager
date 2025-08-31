@@ -1,4 +1,4 @@
-import React, { use, useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -10,9 +10,12 @@ import {
 import ErrorCard from "../components/ErrorCard";
 import { useClientsArray } from "../components/ClientsContext";
 
-export default function AddClientScreen({ navigation }) {
-  const [client, setClient] = useState({ name: "", email: "", phone: "" });
-  const { addClientWithAPI } = useClientsArray();
+export default function AddClientScreen({ navigation, route }) {
+  const [client, setClient] = useState({
+    name: route.params.client.name,
+    email: route.params.client.email,
+    phone: route.params.client.phone,
+  });
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [errors, setErrors] = useState({
@@ -20,12 +23,13 @@ export default function AddClientScreen({ navigation }) {
     email: false,
     phone: false,
   });
+  const { editClientWithAPI } = useClientsArray();
 
   const verifyEmail = (email) => {
     return email === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
-  const handleSave = async () => {
+  const handleEdit = async () => {
     let newErrors = { name: false, email: false, phone: false };
     let hasError = false;
 
@@ -47,16 +51,17 @@ export default function AddClientScreen({ navigation }) {
       setErrorMessage("Ingrese correctamente los datos");
       return;
     }
+
     setLoading(true);
-    await addClientWithAPI(client, setErrorMessage);
+    await editClientWithAPI(route.params.client.id, client, setErrorMessage);
     setLoading(false);
-    navigation.goBack();
+    //navigation.goBack();
   };
 
   return (
     <View style={styles.bgContainer}>
       <View style={styles.card}>
-        <Text style={styles.title}>Agregar Cliente</Text>
+        <Text style={styles.title}>Editar Cliente</Text>
         <View style={styles.dataContainer}>
           <View style={styles.detailRow}>
             <Text style={styles.label}>Nombre:</Text>
@@ -90,12 +95,9 @@ export default function AddClientScreen({ navigation }) {
           </View>
         </View>
         {errorMessage !== "" && <ErrorCard message={errorMessage} />}
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+        <TouchableOpacity style={styles.saveButton} onPress={handleEdit}>
           {loading ? (
-            <ActivityIndicator
-              size="small"
-              color="#ebebebff"
-            />
+            <ActivityIndicator size="small" color="#ebebebff" />
           ) : (
             <Text style={styles.saveButtonText}>Guardar</Text>
           )}
@@ -118,6 +120,10 @@ const styles = StyleSheet.create({
     padding: 24,
     width: "92%",
     elevation: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
     marginVertical: 10,
     alignItems: "stretch",
   },

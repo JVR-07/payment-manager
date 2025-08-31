@@ -15,6 +15,7 @@ class ClientCreate(BaseModel):
     creation_date: date
     email: Optional[str] = None
     phone: str
+    status: Optional[str] = "Created"
 
 class ClientOut(BaseModel):
     id: int
@@ -22,9 +23,16 @@ class ClientOut(BaseModel):
     creation_date: date
     email: Optional[str]
     phone: str
+    status: str
 
     class Config:
         orm_mode = True
+
+class ClientUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    status: Optional[str] = "Created"
 
 class ContractCreate(BaseModel):
     first_payment_date: date
@@ -43,6 +51,9 @@ class ContractOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+class ContractUpdate(BaseModel) :
+    status: str
 
 class PaymentCreate(BaseModel):
     payment_date: date

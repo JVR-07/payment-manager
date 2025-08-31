@@ -2,9 +2,15 @@ import { useEffect, useState, useContext } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import { makeRedirectUri, useAuthRequest } from "expo-auth-session";
-import { GOOGLE_CLIENT_ID_WEB, GOOGLE_CLIENT_ID_ANDROID, BACKEND_URL } from "@env";
+import {
+  GOOGLE_CLIENT_ID_WEB,
+  GOOGLE_CLIENT_ID_ANDROID,
+  BACKEND_URL,
+} from "@env";
 import { Platform } from "react-native";
 import { UserContext } from "../components/UserContext";
+import { handleLoginFlow } from "../services/loginUtils";
+import ErrorCard from "../components/ErrorCard";
 
 import AntDesign from "react-native-vector-icons/AntDesign";
 
@@ -37,76 +43,16 @@ export default function LoginScreen({ navigation }) {
 
   useEffect(() => {
     setInvalidUser(false);
-    const getToken = async () => {
-      if (response?.type === "success" && request?.codeVerifier) {
-        const { code } = response.params;
-        const codeVerifier = request.codeVerifier;
 
-        try {
-          const res = await fetch(
-            `${BACKEND_URL}/google/exchange-code/`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                code,
-                redirectUri,
-                codeVerifier,
-              }),
-            }
-          );
-
-          const tokenData = await res.json();
-          const accessToken = tokenData.access_token;
-
-          if (accessToken) {
-            try {
-              const userInfoResponse = await fetch(
-                "https://www.googleapis.com/oauth2/v3/userinfo",
-                {
-                  headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                  },
-                }
-              );
-
-              const userInfo = await userInfoResponse.json();
-
-              const authRes = await fetch(
-                `${BACKEND_URL}/authorizedusers/`
-              );
-              const authorizedUsers = await authRes.json();
-
-              if (
-                authorizedUsers.find((user) => user.email === userInfo.email)
-              ) {
-                setUser({
-                  access_token: accessToken,
-                  email: userInfo.email,
-                  movadmin: authorizedUsers.find(
-                    (user) => user.email === userInfo.email
-                  ).movadmin,
-                });
-                navigation.replace("Tabs", {
-                  initialTab: "Contracts",
-                });
-              } else {
-                setInvalidUser(true);
-                return;
-              }
-            } catch {
-              setLoginError(true);
-            }
-          } else {
-            setLoginError(true);
-          }
-        } catch (error) {
-          setLoginError(true);
-        }
-      }
-    };
-
-    getToken();
+    handleLoginFlow({
+      response,
+      request,
+      backendUrl: BACKEND_URL,
+      redirectUri,
+      setUser,
+      navigation,
+      setInvalidUser,
+    }).catch(() => setLoginError(true));
   }, [response]);
 
   return (
@@ -114,28 +60,15 @@ export default function LoginScreen({ navigation }) {
       <View style={styles.mainContainer}>
         <Text style={styles.TittleText}>Payment Manager</Text>
         <View style={styles.loginButtonContainer}>
-          {loginError && (
-            <Text style={styles.loginError}>Error al iniciar sesión.</Text>
-          )}
-          {invalidUser && (
-            <Text style={styles.loginError}>Usuario sin autorización.</Text>
-          )}
+          {loginError && <ErrorCard message="Error al iniciar sesión" />}
+          {invalidUser && <ErrorCard message="Usuario sin autorización" />}
           <TouchableOpacity
             style={styles.loginButton}
             disabled={!request}
             onPress={() => promptAsync()}
           >
             <AntDesign name="google" size={30} color="#fff" />
-            <Text
-              style={{
-                fontSize: 20,
-                color: "#fff",
-                textAlign: "center",
-                verticalAlign: "middle",
-              }}
-            >
-              Iniciar sesión
-            </Text>
+            <Text style={styles.loginButtonText}>Iniciar sesión</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -161,19 +94,20 @@ const styles = StyleSheet.create({
   TittleText: {
     fontSize: 30,
     fontWeight: "bold",
-    marginBottom: 40,
     textAlign: "center",
     color: "#1A3D63",
+    paddingTop: 20,
   },
   loginButtonContainer: {
     flex: 1,
     justifyContent: "center",
+    width: "100%",
   },
   loginButton: {
     backgroundColor: "#1A3D63",
     width: "100%",
     padding: 10,
-    borderRadius: 10,
+    borderRadius: 50,
     elevation: 3,
     display: "flex",
     flexDirection: "row",
@@ -186,5 +120,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: "center",
     fontSize: 16,
+  },
+  loginButtonText: {
+    fontSize: 20,
+    color: "#fff",
+    textAlign: "center",
+    verticalAlign: "middle",
   },
 });

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import {
   View,
   Text,
@@ -6,48 +6,84 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Modal,
-  Button,
   TextInput,
-  Platform,
   Pressable,
-  Alert,
   TouchableWithoutFeedback,
 } from "react-native";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { BACKEND_URL } from "@env";
+import { useContractsArray } from "../components/ContractsContext";
+import { usePaymentsArray } from "../components/PaymentsContext";
+import ErrorCard from "../components/ErrorCard";
+import EditButton from "../components/EditButton";
+import DeleteButton from "../components/DeleteButton";
 
 export default function DetailsScreen({ route }) {
   const { client } = route.params;
-  const [contracts, setContracts] = useState([]);
+  const {
+    contractsArray,
+    loadContractsFromAPI,
+    addContractFromAPI,
+    editContractFromAPI,
+    editItemById,
+  } = useContractsArray();
+  const { addPaymentFromAPI, getTotalPendingPayments, editPaymentsStatus } = usePaymentsArray();
   const [expanded, setExpanded] = useState({});
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [modalContractId, setModalContractId] = useState(null);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [addContractErrors, setAddContractErrors] = useState({
+    _firstPaymentDate: false,
+    _totalPayments: false,
+    _totalAmount: false,
+  });
 
   const [firstPaymentDate, setFirstPaymentDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [totalPayments, setTotalPayments] = useState("");
   const [totalAmount, setTotalAmount] = useState("");
 
   useEffect(() => {
-    fetchContracts();
-  }, [client.id]);
-
-  async function fetchContracts() {
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `${BACKEND_URL}/clients/${client.id}/contracts`
+    async function run() {
+      setLoading(true);
+      let loadedContracts = await loadContractsFromAPI(client.id);
+      const activeContract = loadedContracts.find((c) => c.status === "active");
+      loadedContracts = await handleCountPendingPayments(
+        activeContract,
+        loadedContracts
       );
-      if (res.ok) {
-        const data = await res.json();
-        setContracts(data);
-      } else {
-        setContracts([]);
-      }
-    } catch {
-      setContracts([]);
+      await VerifyContractsStatus(loadedContracts);
+      setLoading(false);
     }
-    setLoading(false);
+    run();
+  }, []);
+
+  async function VerifyContractsStatus(contracts) {
+    if(!contracts) return
+    if (contracts.length <= 0) return;
+    if (contracts.some((c) => c.status === "active")) return;
+    const newActiveContract = contracts.find((c) => c.status === "inactive");
+    if(!newActiveContract) return;
+    const updatedData = {
+      status: "active",
+    };
+    await editPaymentsStatus(newActiveContract.id, {status: "Pending"});
+    await editContractFromAPI(newActiveContract.id, updatedData);
+    await editItemById(newActiveContract.id, updatedData);
+  }
+
+  async function handleCountPendingPayments(contract, contracts) {
+    if (!contract) return contracts;
+    c = await getTotalPendingPayments(contract.id);
+    if (c === 0) {
+      const updatedData = {
+        status: "paid",
+      };
+      await editContractFromAPI(contract.id, updatedData);
+      await editItemById(contract.id, updatedData);
+      return contracts.map((cItem) =>
+        cItem.id === contract.id ? { ...cItem, status: "paid" } : cItem
+      );
+    }
   }
 
   const toggleExpand = (contractId) => {
@@ -63,148 +99,198 @@ export default function DetailsScreen({ route }) {
     setTotalAmount("");
   };
 
-  const handleCreateContract = async () => {
-    if (!firstPaymentDate || !totalPayments || !totalAmount) {
-      Alert.alert("Error", "Todos los campos son obligatorios");
+  function verifyData() {
+    let newErrors = {
+      _firstPaymentDate: false,
+      _totalPayments: false,
+      _totalAmount: false,
+    };
+    let hasError = false;
+    let hasInvalidValue = false;
+
+    if (!firstPaymentDate) {
+      newErrors._firstPaymentDate = true;
+      hasError = true;
+    }
+    if (!totalPayments) {
+      newErrors._totalPayments = true;
+      hasError = true;
+    }
+    if (!totalAmount) {
+      newErrors._totalAmount = true;
+      hasError = true;
+    }
+
+    if (hasError) {
+      setAddContractErrors(newErrors);
+      setErrorMessage("Todos los campos son obligatorios");
       return;
     }
+
     const paymentsCount = parseInt(totalPayments, 10);
     const amount = parseFloat(totalAmount);
-    if (
-      isNaN(paymentsCount) ||
-      isNaN(amount) ||
-      paymentsCount <= 0 ||
-      amount <= 0
-    ) {
-      Alert.alert(
-        "Error",
-        "Cantidad de pagos y monto total deben ser números válidos y mayores a 0"
-      );
+    if (isNaN(paymentsCount) || paymentsCount <= 0) {
+      newErrors._totalPayments = true;
+      hasInvalidValue = true;
+    }
+    if (isNaN(amount) || amount <= 0) {
+      newErrors._totalAmount = true;
+      hasInvalidValue = true;
+    }
+    if (hasInvalidValue) {
+      setAddContractErrors(newErrors);
+      setErrorMessage("Pagos y monto total deben ser números válidos");
       return;
     }
     if (paymentsCount > 32) {
-      Alert.alert("Error", "La cantidad máxima de pagos es 32");
+      newErrors._totalPayments = true;
+      setAddContractErrors(newErrors);
+      setErrorMessage("La cantidad máxima de pagos es 32");
       return;
     }
+  }
+
+  const handleCreateContract = async () => {
+    setLoading(true);
+    setErrorMessage("");
+    verifyData();
 
     let statusContract = "active";
     let statusPayment = "Pending";
-    try {
-      const res = await fetch(
-        `${BACKEND_URL}/clients/${client.id}/contracts`
-      );
-      if (res.ok) {
-        const contracts = await res.json();
-        if (contracts.some((c) => c.status === "active")) {
-          statusContract = "inactive";
-          statusPayment = "inactive";
-        }
-      }
-    } catch (e) {
-      Alert.alert("Error", "No se pudo crear el contrato");
+    if (
+      contractsArray.some(
+        (c) => c.client_id === client.id && c.status === "active"
+      )
+    ) {
+      statusContract = "inactive";
+      statusPayment = "inactive";
     }
 
-    let contractId = null;
+    let contract = null;
     try {
-      const res = await fetch(`${BACKEND_URL}/contracts/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      contract = await addContractFromAPI(
+        {
           first_payment_date: firstPaymentDate.toISOString().split("T")[0],
-          total_amount: amount,
-          total_payments: paymentsCount,
+          total_amount: totalAmount,
+          total_payments: totalPayments,
           client_id: client.id,
           status: statusContract,
-        }),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        Alert.alert("Error", err.detail || "No se pudo crear el contrato");
-        return;
-      }
-      const contract = await res.json();
-      contractId = contract.id;
+        },
+        setAddContractErrors
+      );
     } catch (e) {
-      Alert.alert("Error", "No se pudo crear el contrato");
+      setAddContractErrors("Error al crear el contrato");
       return;
     }
-
-    const individualAmount = parseFloat((amount / paymentsCount).toFixed(2));
-    let payments = [];
+    const individualAmount = parseFloat(
+      (totalAmount / totalPayments).toFixed(2)
+    );
     let currentDate = new Date(firstPaymentDate);
-    for (let i = 0; i < paymentsCount; i++) {
-      payments.push({
-        payment_date: currentDate.toISOString().split("T")[0],
-        payment_amount: individualAmount,
-        contract_id: contractId,
-        status: statusPayment,
-      });
-      currentDate.setDate(currentDate.getDate() + 7);
-    }
-
     try {
-      for (const payment of payments) {
-        await fetch(`${BACKEND_URL}/payments/`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payment),
+      for (let i = 0; i < totalPayments; i++) {
+        const payment = await addPaymentFromAPI({
+          payment_date: currentDate.toISOString().split("T")[0],
+          payment_amount: individualAmount,
+          contract_id: contract.id,
+          status: statusPayment,
         });
+        currentDate.setDate(currentDate.getDate() + 7);
       }
     } catch (e) {
-      Alert.alert("Error", "No se pudieron crear los pagos");
+      setErrorMessage("No se pudieron crear los pagos", e);
       return;
     }
 
+    await loadContractsFromAPI(client.id);
+    setLoading(false);
     setShowModal(false);
     resetModal();
-    fetchContracts();
-    Alert.alert("Éxito", "Contrato y pagos creados correctamente");
   };
 
-  function getContractColor(status) {
-    if (status === "active") return "#b3e5fc";
-    return "#D9E1F1";
-  }
+  const handleDeleteContract = async (contractId) => {
+    await editContractFromAPI(contractId, { status: "deleted" });
+    await editItemById(contractId, { status: "deleted" });
+    await loadContractsFromAPI(client.id);
+    setShowDeleteModal(false);
+  };
 
   return (
-    <ScrollView style={styles.mainView} contentContainerStyle={{ padding: 20 }}>
+    <ScrollView style={styles.mainView} contentContainerStyle={{ padding: 15 }}>
       <View style={styles.bgView}>
-        <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10 }}>
-          {client.name}
-        </Text>
-        {client.email ? <Text>Email: {client.email}</Text> : null}
-        {client.phone ? <Text>Tel: {client.phone}</Text> : null}
-        <Text style={{ marginTop: 20, fontSize: 20, fontWeight: "bold" }}>
-          Contratos
-        </Text>
+        <Text style={styles.nameText}>{client.name}</Text>
+        <View style={styles.detailRow}>
+          <Text style={styles.label}>Email:</Text>
+          <Text style={styles.value}>{client.email}</Text>
+        </View>
+        <View style={styles.detailRow}>
+          <Text style={styles.label}>Teléfono:</Text>
+          <Text style={styles.value}>{client.phone}</Text>
+        </View>
+        <Text style={styles.titleText}>Contratos</Text>
         {loading ? (
           <ActivityIndicator
             size="large"
             color="#888"
             style={{ marginTop: 20 }}
           />
-        ) : contracts.length === 0 ? (
-          <Text style={{ marginTop: 10, color: "#888" }}>
+        ) : contractsArray.length === 0 ? (
+          <Text style={{ marginTop: 10, color: "#000000ff", fontSize: 16 }}>
             No hay contratos para este cliente.
           </Text>
         ) : (
-          contracts.map((contract, index) => (
-            <View
-              key={index}
-              style={{
-                marginTop: 16,
-                backgroundColor: getContractColor(contract.status),
-                borderRadius: 8,
-                padding: 12,
-              }}
-            >
+          contractsArray.map((contract, index) => (
+            <View key={index} style={[styles.contractCard]}>
               <TouchableOpacity onPress={() => toggleExpand(contract.id)}>
-                <Text style={{ fontWeight: "bold", fontSize: 16 }}>
-                  Contrato #{index + 1} - {contract.status}
-                </Text>
-                <Text>Primer pago: {contract.first_payment_date}</Text>
-                <Text>Total: ${contract.total_amount}</Text>
-                <Text>Pagos totales: {contract.total_payments}</Text>
+                <View style={styles.indexContainer}>
+                  <Text style={styles.indexText}>Contrato {index + 1}</Text>
+                </View>
+
+                <View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.label}>Monto total:</Text>
+                    <Text style={styles.amountValue}>
+                      ${contract.total_amount}
+                    </Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.label}>Primer pago:</Text>
+                    <Text style={styles.value}>
+                      {new Date(
+                        contract.first_payment_date
+                      ).toLocaleDateString()}
+                    </Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.label}>Pagos totales:</Text>
+                    <Text style={styles.value}>{contract.total_payments}</Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.label}>Estatus:</Text>
+                    <Text
+                      style={[
+                        styles.statusValue,
+                        {
+                          backgroundColor: getStatusBackgroundColor(
+                            contract.status
+                          ),
+                          color: getStatusForegroundColor(contract.status),
+                        },
+                      ]}
+                    >
+                      {contract.status}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.buttonsContainer}>
+                  {/* <EditButton onPress={{}} _size={30} /> */}
+                  <DeleteButton
+                    onPress={() => {
+                      setShowDeleteModal(true);
+                      setModalContractId(contract.id);
+                    }}
+                    _size={30}
+                  />
+                </View>
               </TouchableOpacity>
               {expanded[contract.id] && (
                 <PaymentsList contractId={contract.id} />
@@ -213,8 +299,14 @@ export default function DetailsScreen({ route }) {
           ))
         )}
         <View style={{ marginTop: 30 }}>
-          <TouchableOpacity style={styles.button} onPress={() => setShowModal(true)}> Agregar Contrato </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={() => setShowModal(true)}
+          >
+            <Text style={styles.saveButtonText}>Agregar Contrato</Text>
+          </TouchableOpacity>
         </View>
+
         <Modal
           visible={showModal}
           transparent
@@ -235,19 +327,58 @@ export default function DetailsScreen({ route }) {
                 style={{
                   backgroundColor: "#fff",
                   padding: 20,
-                  borderRadius: 10,
+                  borderRadius: 18,
                   width: "85%",
                   elevation: 5,
+                  alignItems: "stretch",
                 }}
                 onStartShouldSetResponder={() => true}
               >
                 <Text
-                  style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "bold",
+                    marginBottom: 18,
+                    textAlign: "center",
+                    color: "#1A3D63",
+                  }}
                 >
                   Nuevo Contrato
                 </Text>
-                <Text>Fecha del primer pago</Text>
-                {Platform.OS === "web" ? (
+                <View style={styles.detailRowAddContract}>
+                  <Text style={styles.labelAddContract}>
+                    Cantidad de Pagos:
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.textInputAddContract,
+                      addContractErrors._totalPayments &&
+                        styles.inputErrorAddContract,
+                    ]}
+                    value={totalPayments}
+                    onChangeText={setTotalPayments}
+                    placeholder="Ej: 10"
+                    keyboardType="numeric"
+                  />
+                </View>
+                <View style={styles.detailRowAddContract}>
+                  <Text style={styles.labelAddContract}>Monto Total:</Text>
+                  <TextInput
+                    style={[
+                      styles.textInputAddContract,
+                      addContractErrors._totalAmount &&
+                        styles.inputErrorAddContract,
+                    ]}
+                    value={totalAmount}
+                    onChangeText={setTotalAmount}
+                    placeholder="Ej: 1000"
+                    keyboardType="numeric"
+                  />
+                </View>
+                <View style={styles.detailRowAddContract}>
+                  <Text style={styles.labelAddContract}>
+                    Fecha del primer pago:
+                  </Text>
                   <input
                     type="date"
                     value={firstPaymentDate.toISOString().split("T")[0]}
@@ -257,65 +388,55 @@ export default function DetailsScreen({ route }) {
                     style={{
                       marginVertical: 10,
                       padding: 8,
-                      borderRadius: 5,
-                      borderWidth: 1,
-                      borderColor: "#ccc",
+                      borderRadius: 0,
+                      borderWidth: 0,
+                      borderBottomWidth: 1,
                       width: "100%",
                       marginBottom: 10,
+                      ...(addContractErrors._firstPaymentDate && {
+                        borderColor: "#1A3D63",
+                      }),
                     }}
                   />
-                ) : (
-                  <>
-                    <Button
-                      title={
-                        firstPaymentDate
-                          ? firstPaymentDate.toISOString().split("T")[0]
-                          : "Seleccionar fecha"
-                      }
-                      onPress={() => setShowDatePicker(true)}
-                    />
-                    {showDatePicker && (
-                      <DateTimePicker
-                        value={firstPaymentDate}
-                        mode="date"
-                        display={Platform.OS === "ios" ? "spinner" : "default"}
-                        onChange={(event, selectedDate) => {
-                          setShowDatePicker(false);
-                          if (selectedDate) setFirstPaymentDate(selectedDate);
-                        }}
-                      />
-                    )}
-                  </>
-                )}
-                <Text style={{ marginTop: 10 }}>Cantidad de pagos</Text>
-                <TextInput
-                  style={{
-                    borderWidth: 1,
-                    marginBottom: 10,
-                    padding: 8,
-                    borderRadius: 5,
-                  }}
-                  value={totalPayments}
-                  onChangeText={setTotalPayments}
-                  placeholder="Ej: 10"
-                  keyboardType="numeric"
-                />
-                <Text>Monto total</Text>
-                <TextInput
-                  style={{
-                    borderWidth: 1,
-                    marginBottom: 20,
-                    padding: 8,
-                    borderRadius: 5,
-                  }}
-                  value={totalAmount}
-                  onChangeText={setTotalAmount}
-                  placeholder="Ej: 1000"
-                  keyboardType="numeric"
-                />
-                <TouchableOpacity style={styles.button} onPress={handleCreateContract}> Crear contrato </TouchableOpacity>
+                </View>
+                {errorMessage !== "" && <ErrorCard message={errorMessage} />}
+                <TouchableOpacity
+                  style={styles.saveButton}
+                  onPress={handleCreateContract}
+                >
+                  <Text style={styles.saveButtonText}>Crear contrato</Text>
+                </TouchableOpacity>
               </View>
             </TouchableWithoutFeedback>
+          </Pressable>
+        </Modal>
+        <Modal
+          visible={showDeleteModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowDeleteModal(false)}
+        >
+          <Pressable
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.3)",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+            onPress={() => setShowDeleteModal(false)}
+          >
+            <View style={styles.card}>
+              <Text style={styles.titleDeleteModal}>Eliminar Contrato</Text>
+              <Text style={styles.labelDeleteModal}>
+                ¿Está seguro que quiere eliminar el contrato?
+              </Text>
+              <TouchableOpacity
+                style={styles.saveButton}
+                onPress={() => handleDeleteContract(modalContractId)}
+              >
+                <Text style={styles.saveButtonText}>Confirmar</Text>
+              </TouchableOpacity>
+            </View>
           </Pressable>
         </Modal>
       </View>
@@ -323,85 +444,85 @@ export default function DetailsScreen({ route }) {
   );
 }
 
-function getPaymentColor(status) {
-  if (status === "Pending") return "#fff";
+function getStatusForegroundColor(status) {
+  if (status === "Pending") return "#7a7a7aff";
+  if (status === "Paid") return "#3fdb3fff";
+  if (status === "Overdue") return "#F10303";
+  if (status === "inactive") return "#fcc44aff";
+  if (status === "active") return "#348df3ff";
+}
+function getStatusBackgroundColor(status) {
+  if (status === "Pending") return "#D9E1F1";
   if (status === "Paid") return "#b6fcb6";
-  if (status === "Overdue") return "#ffb1b1";
-  return "#fff";
+  if (status === "Overdue") return "#fad2d2ff";
+  if (status === "inactive") return "#fff7ccff";
+  if (status === "active") return "#d0e8ff";
 }
 
 function PaymentsList({ contractId }) {
-  const [payments, setPayments] = useState([]);
+  const { paymentsArray, loadPaymentsFromAPI } = usePaymentsArray();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchPayments() {
-      setLoading(true);
-      try {
-        const res = await fetch(
-          `${BACKEND_URL}/contracts/${contractId}/payments`
-        );
-        if (res.ok) {
-          const data = await res.json();
-          setPayments(data);
-        } else {
-          setPayments([]);
-        }
-      } catch {
-        setPayments([]);
-      }
-      setLoading(false);
-    }
-    fetchPayments();
+    setLoading(true);
+    loadPaymentsFromAPI(contractId).then(() => setLoading(false));
   }, [contractId]);
 
-  useEffect(() => {
-    console.log(payments);
-    async function updateLatePayments() {
-      const now = new Date();
-      for (const payment of payments) {
-        if (payment.status === "Pending") {
-          const [year, month, day] = payment.payment_date
-            .split("-")
-            .map(Number);
-          const dueDate = new Date(year, month - 1, day, 16, 0, 0, 0);
-          if (now > dueDate) {
-            await fetch(`${BACKEND_URL}/payments/${payment.id}`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ status: "Overdue" }),
-            });
-            payment.status = "Overdue";
-          }
-        }
-      }
-    }
-    if (payments.length > 0) updateLatePayments();
-  }, [payments]);
-
-  if (loading)
+  if (loading) {
     return (
       <ActivityIndicator size="small" color="#888" style={{ marginTop: 10 }} />
     );
-  if (payments.length === 0)
-    return <Text style={{ marginTop: 10, color: "#888" }}>Sin pagos.</Text>;
+  }
+
+  if (paymentsArray.length === 0) {
+    return (
+      <Text style={{ marginTop: 10, color: "#888" }}>
+        No hay pagos para este contrato.
+      </Text>
+    );
+  }
 
   return (
     <View style={{ marginTop: 10 }}>
-      {payments.map((payment, index) => (
+      {paymentsArray.map((payment, idx) => (
         <View
-          key={index}
+          key={payment.id}
           style={{
-            backgroundColor: getPaymentColor(payment.status),
-            marginBottom: 6,
-            padding: 8,
+            backgroundColor: "#fff",
             borderRadius: 6,
+            padding: 8,
+            marginBottom: 6,
           }}
         >
-          <Text>Numero de pago: {index + 1}</Text>
-          <Text>Fecha: {payment.payment_date}</Text>
-          <Text>Monto: ${payment.payment_amount}</Text>
-          <Text>Estatus: {payment.status}</Text>
+          <View style={styles.indexContainerPayment}>
+            <Text style={styles.indexTextPayment}>Pago {idx + 1}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.labelPayment}>Fecha: </Text>
+            <Text style={styles.valuePayment}>
+              {new Date(payment.payment_date).toLocaleDateString()}
+            </Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.labelPayment}>Monto:</Text>
+            <Text style={styles.amountValuePayment}>
+              ${payment.payment_amount}
+            </Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.labelPayment}>Estatus:</Text>
+            <Text
+              style={[
+                styles.statusValuePayment,
+                {
+                  backgroundColor: getStatusBackgroundColor(payment.status),
+                  color: getStatusForegroundColor(payment.status),
+                },
+              ]}
+            >
+              {payment.status}
+            </Text>
+          </View>
         </View>
       ))}
     </View>
@@ -414,7 +535,7 @@ styles = {
   },
   bgView: {
     backgroundColor: "#F6FAFD",
-    with: "95%",
+    with: "100%",
     height: "100%",
     borderRadius: 25,
     padding: 15,
@@ -428,5 +549,176 @@ styles = {
     verticalAlign: "middle",
     textAlign: "center",
     color: "#F6FAFD",
+  },
+  nameText: {
+    fontSize: 26,
+    fontWeight: "bold",
+    color: "#1A3D63",
+    marginBottom: 10,
+  },
+  detailsText: {
+    fontSize: 16,
+    color: "#272727ff",
+    fontWeight: "500",
+  },
+  detailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  label: {
+    fontWeight: "bold",
+    color: "#1A3D63",
+    width: 80,
+    fontSize: 16,
+  },
+  value: {
+    color: "#272727ff",
+    fontSize: 16,
+    flex: 1,
+  },
+  titleText: {
+    fontSize: 26,
+    fontWeight: "bold",
+    color: "#1A3D63",
+    textAlign: "center",
+  },
+  contractCard: {
+    marginTop: 16,
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: "#D9E1F1",
+  },
+  indexContainer: { marginBottom: 18 },
+  indexText: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#1A3D63",
+    textAlign: "left",
+  },
+  detailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  label: {
+    fontWeight: "bold",
+    color: "#1A3D63",
+    width: 110,
+    fontSize: 16,
+  },
+  value: {
+    color: "#333",
+    fontSize: 16,
+    flex: 1,
+  },
+  amountValue: {
+    fontWeight: "bold",
+    color: "#23C16B",
+  },
+  statusValue: {
+    fontWeight: "bold",
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+    borderRadius: 50,
+  },
+  saveButton: {
+    backgroundColor: "#1A3D63",
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  saveButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+  indexContainerPayment: { marginBottom: 10 },
+  indexTextPayment: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#1A3D63",
+    textAlign: "left",
+  },
+  labelPayment: {
+    fontWeight: "bold",
+    color: "#1A3D63",
+    width: 60,
+    fontSize: 14,
+  },
+  valuePayment: {
+    color: "#333",
+    fontSize: 14,
+    flex: 1,
+  },
+  amountValuePayment: {
+    fontWeight: "bold",
+    color: "#23C16B",
+    fontSize: 14,
+  },
+  statusValuePayment: {
+    fontWeight: "bold",
+    fontSize: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+    borderRadius: 50,
+  },
+  detailRowAddContract: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  labelAddContract: {
+    fontWeight: "bold",
+    color: "#1A3D63",
+    width: 150,
+    fontSize: 12,
+  },
+  textInputAddContract: {
+    borderWidth: 0,
+    padding: 8,
+    verticalAlign: "middle",
+    width: "100%",
+    borderBottomWidth: 1,
+  },
+  inputErrorAddContract: {
+    borderBottomColor: "red",
+  },
+  inputError: {
+    borderBottomColor: "red",
+  },
+  buttonsContainer: {
+    flexDirection: "row",
+    gap: 15,
+    alignSelf: "center",
+  },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 18,
+    padding: 24,
+    width: "92%",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    marginVertical: 10,
+    alignItems: "stretch",
+  },
+  titleDeleteModal: {
+    fontSize: 26,
+    fontWeight: "bold",
+    color: "#1A3D63",
+    marginBottom: 18,
+    textAlign: "center",
+  },
+  labelDeleteModal: {
+    fontWeight: "bold",
+    color: "#000000ff",
+    width: 110,
+    fontSize: 16,
+    width: "100%",
+    marginBottom: 18,
   },
 };
