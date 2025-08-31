@@ -2,10 +2,10 @@ import React from 'react';
 import { TouchableOpacity, StyleSheet } from 'react-native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 
-export default function DeleteButton({ onPress }) {
+export default function DeleteButton({ onPress, _size = 20 }) {
   return (
     <TouchableOpacity style={[styles.button, styles.red]} onPress={onPress}>
-      <AntDesign name="delete" size={20} color="#fff" />
+      <AntDesign name="delete" size={_size} color="#fff" />
     </TouchableOpacity>
   );
 }

@@ -4,7 +4,8 @@ import LoginScreen from "../screens/LoginScreen";
 import TabNavigator from "./TabNavigator";
 import AddClientScreen from "../screens/AddClientScreen";
 import DetailsScreen from "../screens/DetailsScreen";
-import EditClientScreen from "../screens/EditClientScreen"
+import EditClientScreen from "../screens/EditClientScreen";
+import EditMovementScreen from "../screens/EditMovementScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -24,6 +25,7 @@ export default function StackNavigator() {
       <Stack.Screen name="AddClient" component={AddClientScreen} />
       <Stack.Screen name="Details" component={DetailsScreen} />
       <Stack.Screen name="EditClient" component={EditClientScreen} />
+      <Stack.Screen name="EditMovement" component={EditMovementScreen} />
     </Stack.Navigator>
   );
 }

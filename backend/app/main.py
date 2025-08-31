@@ -51,7 +51,8 @@ def create_client(client: schemas.ClientCreate, db: Session = Depends(get_db)):
         name=client.name,
         creation_date=client.creation_date,
         email=client.email,
-        phone=client.phone
+        phone=client.phone,
+        status=client.status or "Created"
     )
     db.add(db_client)
     db.commit()
@@ -60,7 +61,26 @@ def create_client(client: schemas.ClientCreate, db: Session = Depends(get_db)):
 
 @app.get("/clients/", response_model=list[schemas.ClientOut])
 def get_clients(db: Session = Depends(get_db)):
-    return db.query(models.Client).all()
+    return db.query(models.Client).where(models.Client.status != "Deleted").order_by(models.Client.id).all()
+
+@app.put("/clients/{client_id}", response_model=schemas.ClientOut)
+def update_client(client_id: int, updated_data: schemas.ClientUpdate, db: Session = Depends(get_db)):
+    client = db.query(models.Client).filter(models.Client.id == client_id).first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    
+    if updated_data.name is not None:
+        client.name = updated_data.name
+    if updated_data.email is not None:
+        client.email = updated_data.email
+    if updated_data.phone is not None:
+        client.phone = updated_data.phone
+    if updated_data.status is not None:
+        client.status = updated_data.status
+        
+    db.commit()
+    db.refresh(client)
+    return client
 
 @app.delete("/clients/{client_id}")
 def delete_client(client_id: int, db: Session = Depends(get_db)):
@@ -94,7 +114,20 @@ def create_contract(contract: schemas.ContractCreate, db: Session = Depends(get_
 
 @app.get("/clients/{client_id}/contracts", response_model=list[schemas.ContractOut])
 def get_contracts_by_client(client_id: int, db: Session = Depends(get_db)):
-    return db.query(models.Contract).filter(models.Contract.client_id == client_id).all()
+    return db.query(models.Contract).filter(models.Contract.client_id == client_id).where(models.Contract.status != "deleted").order_by(models.Contract.id).all()
+
+@app.put("/contracts/{contract_id}", response_model=schemas.ContractOut)
+def update_contracts(contract_id: int, updated_data: schemas.ContractUpdate, db: Session = Depends(get_db)):
+    contract = db.query(models.Contract).filter(models.Contract.id == contract_id).first()
+    if not contract:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    if updated_data.status is not None:
+        contract.status = updated_data.status
+        
+    db.commit()
+    db.refresh(contract)
+    return contract
 
 @app.post("/payments/", response_model=schemas.PaymentOut)
 def create_payment(payment: schemas.PaymentCreate, db: Session = Depends(get_db)):
@@ -128,7 +161,7 @@ def update_payment(payment_id: int, updated_data: schemas.PaymentUpdate, db: Ses
 
 @app.get("/contracts/{contract_id}/payments", response_model=list[schemas.PaymentOut])
 def get_payments_by_contract(contract_id: int, db: Session = Depends(get_db)):
-    return db.query(models.Payment).filter(models.Payment.contract_id == contract_id).order_by(models.Payment.id).all()
+    return db.query(models.Payment).filter(models.Payment.contract_id == contract_id).where(models.Payment.status != "Deleted").order_by(models.Payment.payment_date).all()
 
 @app.get("/contracts/{contract_id}/payments/first-pending", response_model=schemas.PaymentOut)
 def get_first_pending_payment(contract_id: int, db: Session = Depends(get_db)):
@@ -136,6 +169,25 @@ def get_first_pending_payment(contract_id: int, db: Session = Depends(get_db)):
     if not payment:
         raise HTTPException(status_code=404, detail="No pending payments found for this contract")
     return payment
+
+@app.get("/contracts/{contract_id}/payments/count-pending", response_model=int)
+def get_total_pending_payments(contract_id: int, db: Session = Depends(get_db)):
+    c = db.query(models.Payment).filter(models.Payment.contract_id == contract_id, models.Payment.status == "Pending").count()
+    return c
+
+@app.put("/contracts/{contract_id}/payments/update-status", response_model=schemas.PaymentUpdate)
+def update_payments_status(contract_id: int, db: Session = Depends(get_db)):
+    paymentsUpdated = db.query(models.Payment).filter(models.Payment.contract_id == contract_id, models.Payment.status == "inactive").all()
+    if not paymentsUpdated:
+        raise HTTPException(status_code=404, detail="No inactive payments for this contract")
+    
+    for payment in paymentsUpdated:
+        payment.status = "Pending"
+    
+    db.commit()
+    db.refresh_all(paymentsUpdated)
+    return paymentsUpdated
+    
 
 @app.post("/movements/", response_model=schemas.MovementOut)
 def create_movement(movement: schemas.MovementCreate, db: Session = Depends(get_db)):
@@ -154,7 +206,7 @@ def create_movement(movement: schemas.MovementCreate, db: Session = Depends(get_
 
 @app.get("/movements/", response_model=list[schemas.MovementOut])
 def get_movements(db: Session = Depends(get_db)):
-    return db.query(models.Movement).all()
+    return db.query(models.Movement).where(models.Movement.status != "Deleted").all()
 
 @app.put("/movements/{cdr}", response_model=schemas.MovementOut)
 def update_movement(cdr: int, updated_data: schemas.MovementUpdate, db: Session = Depends(get_db)):
@@ -227,7 +279,7 @@ def get_gmail_emails(data: dict = Body(...), db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="EMAIL_ADDRESS not set in .env")
 
     headers = {"Authorization": f"Bearer {access_token}"}
-    query = f'from:{email_address} subject:Recibiste'
+    query = f'from:{email_address} subject:Recibiste after:2025/08/01 after:2025/08/01'
     list_url = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
     list_params = {"q": query}
 
@@ -286,6 +338,9 @@ def get_gmail_emails(data: dict = Body(...), db: Session = Depends(get_db)):
             db.commit()
             db.refresh(db_movement)
             
+            
+            saved_count += 1
+            
             emails.append({
                 "subject": subject,
                 "from": from_email,
@@ -294,10 +349,9 @@ def get_gmail_emails(data: dict = Body(...), db: Session = Depends(get_db)):
                 "monto": _amount,
                 "concepto": _concept,
                 "cdr": _cdr,
-            })
-        saved_count += 1    
+            })    
 
-    return {"message": "Sync completed", "saved_count": saved_count}
+    return {"message": "Sync completed"}
 
 def parse_email_body(html_body):
     soup = BeautifulSoup(html_body, "html.parser")

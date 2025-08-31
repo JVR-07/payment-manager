@@ -1,5 +1,5 @@
 import { createContext, useState, useContext } from "react";
-import { fetchClientsFromAPI } from "../services/clientUtils";
+import { createClientWithAPI, fetchClientsFromAPI, updateClientWithAPI } from "../services/clientUtils";
 import { BACKEND_URL } from "@env";
 
 const GlobalClientsContext = createContext();
@@ -25,6 +25,14 @@ export const GlobalClientsProvider = ({ children }) => {
     await fetchClientsFromAPI(BACKEND_URL, setClientArray);
   };
 
+  const addClientWithAPI = async (clientData, setErrorMessage) => {
+    await createClientWithAPI(BACKEND_URL, clientData, setErrorMessage);
+  }
+
+  const editClientWithAPI = async (clientId, clientData, setErrorMessage) => {
+    await updateClientWithAPI(BACKEND_URL, clientId, clientData, setErrorMessage);
+  };
+
   return (
     <GlobalClientsContext.Provider
       value={{
@@ -33,6 +41,8 @@ export const GlobalClientsProvider = ({ children }) => {
         removeItemById,
         editItemById,
         loadClientsFromAPI,
+        addClientWithAPI,
+        editClientWithAPI
       }}
     >
       {children}

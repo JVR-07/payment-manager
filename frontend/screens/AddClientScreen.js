@@ -1,131 +1,166 @@
-import React, { useState } from "react";
+import React, { use, useState } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
+  StyleSheet,
+  ActivityIndicator
 } from "react-native";
-import { BACKEND_URL } from "@env";
+import ErrorCard from "../components/ErrorCard";
+import { useClientsArray } from "../components/ClientsContext";
 
 export default function AddClientScreen({ navigation }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [client, setClient] = useState({ name: "", email: "", phone: "" });
+  const { addClientWithAPI } = useClientsArray();
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [errors, setErrors] = useState({
+    name: false,
+    email: false,
+    phone: false,
+  });
 
   const verifyEmail = (email) => {
     return email === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
   const handleSave = async () => {
-    if (!name || !phone || !email) {
-      console.log("Nombre, numero y email son obligatorios.");
-      return;
+    let newErrors = { name: false, email: false, phone: false };
+    let hasError = false;
+
+    if (!client.name) {
+      newErrors.name = true;
+      hasError = true;
     }
-    if (!verifyEmail(email)) {
-      console.log("El email no es válido.");
-      return;
+    if (!client.phone) {
+      newErrors.phone = true;
+      hasError = true;
+    }
+    if (!client.email || !verifyEmail(client.email)) {
+      newErrors.email = true;
+      hasError = true;
     }
 
-    try {
-      const response = await fetch(`${BACKEND_URL}/clients/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          creation_date: new Date().toISOString().split("T")[0],
-          email: email || null,
-          phone: phone,
-        }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.log("No se pudo agregar el cliente ", errorData.detail);
-        return;
-      }
-      console.log("Cliente agregado correctamente.");
-      navigation.goBack();
-    } catch (error) {
-      console.log("Error de conexión con el servidor: ", error);
+    setErrors(newErrors);
+    if (hasError) {
+      setErrorMessage("Ingrese correctamente los datos");
+      return;
     }
+    setLoading(true);
+    await addClientWithAPI(client, setErrorMessage);
+    setLoading(false);
+    navigation.goBack();
   };
 
   return (
-    <ScrollView
-      style={styles.mainView}
-      contentContainerStyle={{
-        flexGrow: 1,
-        justifyContent: "center",
-        padding: 20,
-      }}
-    >
-      <View style={styles.bgView}>
+    <View style={styles.bgContainer}>
+      <View style={styles.card}>
         <Text style={styles.title}>Agregar Cliente</Text>
-        <Text>Nombre *</Text>
-        <TextInput
-          style={styles.textInput}
-          value={name}
-          onChangeText={setName}
-          placeholder="Nombre"
-        />
-        <Text>Email *</Text>
-        <TextInput
-          style={styles.textInput}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Correo electrónico"
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-        <Text>Teléfono *</Text>
-        <TextInput
-          style={styles.textInput}
-          value={phone}
-          onChangeText={setPhone}
-          placeholder="Teléfono"
-          keyboardType="phone-pad"
-          maxLength={20}
-        />
-        <TouchableOpacity style={styles.button} onPress={handleSave}>
-          {" "}
-          Guardar{" "}
+        <View style={styles.dataContainer}>
+          <View style={styles.detailRow}>
+            <Text style={styles.label}>Nombre:</Text>
+            <TextInput
+              style={[styles.textInput, errors.name && styles.inputError]}
+              value={client.name}
+              onChangeText={(text) => setClient({ ...client, name: text })}
+              placeholder="Nombre"
+            />
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.label}>Email:</Text>
+            <TextInput
+              style={[styles.textInput, errors.email && styles.inputError]}
+              value={client.email}
+              onChangeText={(text) => setClient({ ...client, email: text })}
+              placeholder="Correo electrónico"
+              keyboardType="email-address"
+            />
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.label}>Teléfono:</Text>
+            <TextInput
+              style={[styles.textInput, errors.phone && styles.inputError]}
+              value={client.phone}
+              onChangeText={(text) => setClient({ ...client, phone: text })}
+              placeholder="Teléfono"
+              keyboardType="phone-pad"
+              maxLength={20}
+            />
+          </View>
+        </View>
+        {errorMessage !== "" && <ErrorCard message={errorMessage} />}
+        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+          {loading ? (
+            <ActivityIndicator
+              size="small"
+              color="#ebebebff"
+            />
+          ) : (
+            <Text style={styles.saveButtonText}>Guardar</Text>
+          )}
         </TouchableOpacity>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
-const styles = {
-  mainView: {
+const styles = StyleSheet.create({
+  bgContainer: {
+    flex: 1,
     backgroundColor: "#1A3D63",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  bgView: {
-    backgroundColor: "#F6FAFD",
-    with: "95%",
-    borderRadius: 25,
-    padding: 5,
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 18,
+    padding: 24,
+    width: "92%",
+    elevation: 4,
+    marginVertical: 10,
+    alignItems: "stretch",
   },
   title: {
-    fontSize: 24,
-    marginBottom: 20,
+    fontSize: 26,
     fontWeight: "bold",
-    textAlign: "center",
     color: "#1A3D63",
+    marginBottom: 18,
+    textAlign: "center",
+  },
+  dataContainer: {
+    marginBottom: 18,
+  },
+  detailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  label: {
+    fontWeight: "bold",
+    color: "#1A3D63",
+    width: 110,
+    fontSize: 16,
   },
   textInput: {
-    borderWidth: 1,
-    marginBottom: 10,
+    borderWidth: 0,
     padding: 8,
-    borderRadius: 5,
-  },
-  button: {
-    backgroundColor: "#007AFF",
-    width: "100%",
-    padding: 10,
-    marginBottom: 10,
-    borderRadius: 10,
     verticalAlign: "middle",
-    textAlign: "center",
-    color: "#F6FAFD",
+    width: "100%",
+    borderBottomWidth: 1,
   },
-};
+  inputError: {
+    borderBottomColor: "red",
+  },
+  saveButton: {
+    backgroundColor: "#1A3D63",
+    paddingVertical: 12,
+    borderRadius: 50,
+  },
+  saveButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+});

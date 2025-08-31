@@ -3,7 +3,13 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import EditButton from "./EditButton";
 import DeleteButton from "./DeleteButton";
 
-export default function ClientCard({ index, client, onPressCard, onEdit, onDelete }) {
+export default function ClientCard({
+  index,
+  client,
+  onPressCard,
+  //onEdit,
+  onDelete,
+}) {
   return (
     <TouchableOpacity
       onPress={onPressCard}
@@ -17,10 +23,11 @@ export default function ClientCard({ index, client, onPressCard, onEdit, onDelet
 
         <View style={styles.nameContainer}>
           <Text style={styles.nameText}>{client.name}</Text>
+          <Text style={styles.phoneText}>{client.phone}</Text>
         </View>
 
         <View style={styles.buttonsContainer}>
-          <EditButton onPress={onEdit} />
+          {/* <EditButton onPress={onEdit} /> */}
           <DeleteButton onPress={onDelete} />
         </View>
       </View>
@@ -57,6 +64,11 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
     textAlign: "left",
+  },
+  phoneText: {
+    fontSize: 16,
+    color: "#272727ff",
+    fontWeight: "500",
   },
   buttonsContainer: {
     flexDirection: "row",

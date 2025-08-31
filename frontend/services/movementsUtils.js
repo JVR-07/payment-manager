@@ -35,7 +35,6 @@ export async function fetchMovements(setMovements) {
 export async function runMovementsSync(accessToken, setMovements) {
   try {
     const resultSync = await syncMovements(accessToken);
-    console.log(resultSync);
 
     if (resultSync?.message === "Sync completed") {
       await fetchMovements(setMovements);
@@ -44,5 +43,24 @@ export async function runMovementsSync(accessToken, setMovements) {
     }
   } catch (error) {
     console.log("Unexpected error in runMovementsSync()", error);
+  }
+}
+
+export async function updateMovement(movementCdr, updatedFields) {
+  try {
+    console.log("Entrando a edit function", movementCdr, updatedFields)
+    const res = await fetch(`${BACKEND_URL}/movements/${movementCdr}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ updatedFields }),
+    });
+    if(!res.ok) {
+      console.log("Error updating movement: ", res)
+    }
+    else {
+      console.log("Fetch correcto: ", res)
+    }
+  } catch (e) {
+    console.log("Error updating movement: ", e);
   }
 }

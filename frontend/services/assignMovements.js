@@ -1,23 +1,19 @@
 
 import { BACKEND_URL } from "@env";
 
-export async function assignUnassignedMovements(movementsAray, clientArray) {
-
-  const unassignedMovements = movementsAray.filter(
+export async function assignUnassignedMovements(clientArray, movementsArray) {
+  const unassignedMovements = movementsArray.filter(
     (movement) => movement.status === "Unassigned"
   );
 
-  console.log("Unassigned movements:", unassignedMovements);
-
   if (unassignedMovements.length === 0) {
-    console.log("No unassigned movements to assign");
     return;
   }
 
   for (const movement of unassignedMovements) {
     try {
       const client = clientArray.find(
-        (c) => c.alias === movement.concept
+        (c) => c.phone === movement.concept
       );
 
       if (!client) {
@@ -33,14 +29,12 @@ export async function assignUnassignedMovements(movementsAray, clientArray) {
         continue;
       }
       const contracts = await contractRes.json();
-      console.log("Contracts for client:", contracts);
 
       const contract = contracts.find((c) => c.status === "active");
       if (!contract) {
         console.log("No active contract found for client:", client);
         continue;
       }
-      console.log("Active contract found:", contract);
 
       const paymentRes = await fetch(
         `${BACKEND_URL}/contracts/${contract.id}/payments/first-pending`
@@ -66,7 +60,6 @@ export async function assignUnassignedMovements(movementsAray, clientArray) {
       if (updateRes.ok) {
         movement.status = "Assigned";
         movement.payment_id = payment.id;
-        console.log(`Movement ${movement.cdr} assigned successfully`);
       } else {
         console.log("Error assigning movement:", await updateRes.text());
       }
@@ -82,7 +75,6 @@ export async function assignUnassignedMovements(movementsAray, clientArray) {
         }
       );
       if (updatePay.ok) {
-        console.log(`Payment ${movement.payment_id} updated successfully`);
       } else {
         console.log("Error updating payment:", await updatePay.text());
       }
